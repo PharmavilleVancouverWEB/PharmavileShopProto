@@ -57,6 +57,16 @@ body {
     background-color: #1557b0;
 }
 
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    margin-top: 10px;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
 .shop-container {
     max-width: 1000px;
     margin: 0 auto;
