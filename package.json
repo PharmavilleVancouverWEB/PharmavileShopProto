@@ -8,5 +8,6 @@
     "express": "^4.17.1",
     "node-fetch": "^2.6.1",
     "nodemailer": "^6.9.1"
-  }
+  },
+  "license": "MIT"
 }
