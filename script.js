@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadStock() {
         fetch(`${apiUrl}/stock`)
             .then(res => {
-                if (!res.ok) throw new Error('Failed to fetch stock');
+                if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch stock`);
                 return res.json();
             })
             .then(items => {
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(err => {
                 console.error('Stock load error:', err);
-                resultDiv.textContent = 'Error loading stock';
+                resultDiv.textContent = `Error loading stock: ${err.message}`;
             });
     }
 
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
             body: JSON.stringify({ email: user.email, name: user.name, items: cart })
         })
             .then(res => {
-                if (!res.ok) throw new Error('Order request failed');
+                if (!res.ok) throw new Error(`HTTP ${res.status}: Order request failed`);
                 return res.json();
             })
             .then(result => {
@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(err => {
                 loadingDiv.style.display = 'none';
-                resultDiv.textContent = `Error: ${err.message}`;
+                resultDiv.textContent = `Error placing order: ${err.message}`;
             });
     });
 
@@ -180,6 +180,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = document.getElementById('itemName').value;
             const price = parseFloat(document.getElementById('itemPrice').value);
             const stock = parseInt(document.getElementById('itemStock').value);
+            if (!name || isNaN(price) || isNaN(stock)) {
+                resultDiv.textContent = 'Please fill all fields with valid data';
+                return;
+            }
             const item = { id: id ? parseInt(id) : null, name, price, stock };
 
             fetch(`${apiUrl}/update-stock`, {
@@ -188,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(item)
             })
                 .then(res => {
-                    if (!res.ok) throw new Error('Stock update failed');
+                    if (!res.ok) throw new Error(`HTTP ${res.status}: Stock update failed`);
                     return res.json();
                 })
                 .then(result => {
@@ -197,11 +201,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         stockForm.reset();
                         resultDiv.textContent = 'Stock updated successfully!';
                     } else {
-                        resultDiv.textContent = `Error: ${result.error}`;
+                        resultDiv.textContent = `Error updating stock: ${result.error}`;
                     }
                 })
                 .catch(err => {
-                    resultDiv.textContent = `Error: ${err.message}`;
+                    resultDiv.textContent = `Error updating stock: ${err.message}`;
                 });
         });
 
@@ -217,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ id: parseInt(id) })
             })
                 .then(res => {
-                    if (!res.ok) throw new Error('Stock deletion failed');
+                    if (!res.ok) throw new Error(`HTTP ${res.status}: Stock deletion failed`);
                     return res.json();
                 })
                 .then(result => {
@@ -226,11 +230,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         stockForm.reset();
                         resultDiv.textContent = 'Item deleted successfully!';
                     } else {
-                        resultDiv.textContent = `Error: ${result.error}`;
+                        resultDiv.textContent = `Error deleting stock: ${result.error}`;
                     }
                 })
                 .catch(err => {
-                    resultDiv.textContent = `Error: ${err.message}`;
+                    resultDiv.textContent = `Error deleting stock: ${err.message}`;
                 });
         });
     }
@@ -239,20 +243,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!onlineUsersDiv) return;
         fetch(`${apiUrl}/users`)
             .then(res => {
-                if (!res.ok) throw new Error('Failed to fetch users');
+                if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch users`);
                 return res.json();
             })
             .then(users => {
                 onlineUsersDiv.innerHTML = '';
-                users.forEach(user => {
-                    const div = document.createElement('div');
-                    div.textContent = `${user.name} (${user.email})`;
-                    onlineUsersDiv.appendChild(div);
-                });
+                if (users.length === 0) {
+                    onlineUsersDiv.textContent = 'No users online';
+                } else {
+                    users.forEach(user => {
+                        const div = document.createElement('div');
+                        div.textContent = `${user.name} (${user.email})`;
+                        onlineUsersDiv.appendChild(div);
+                    });
+                }
             })
             .catch(err => {
                 console.error('Users load error:', err);
-                onlineUsersDiv.innerHTML = 'Error loading users';
+                onlineUsersDiv.textContent = `Error loading users: ${err.message}`;
             });
     }
 });
