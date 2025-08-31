@@ -1,6 +1,11 @@
 const apiUrl = ''; // Relative path, same domain
 let cart = [];
 let stockItems = []; // Store stock data for name lookup
+let isDragging = false;
+let currentX;
+let currentY;
+let xOffset = 0;
+let yOffset = 0;
 
 const loginForm = document.getElementById('loginForm');
 const loginDiv = document.getElementById('login');
@@ -11,23 +16,59 @@ const orderBtn = document.getElementById('orderBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const loadingDiv = document.getElementById('loading');
 const resultDiv = document.getElementById('result');
+const adminMenu = document.getElementById('adminMenu');
+const stockForm = document.getElementById('stockForm');
+const deleteItemBtn = document.getElementById('deleteItemBtn');
+const closeAdminBtn = document.getElementById('closeAdminBtn');
+const onlineUsersDiv = document.getElementById('onlineUsers');
 
 loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const name = document.getElementById('name').value;
     const email = document.getElementById('email').value;
-    // Store user data in memory, not localStorage
     window.currentUser = { name, email };
     loginDiv.style.display = 'none';
     shopDiv.style.display = 'block';
+    if (name === 'Administrator' && email === 'noreply.pharmaville@gmail.com') {
+        adminMenu.style.display = 'block';
+        loadOnlineUsers();
+        setInterval(loadOnlineUsers, 10000); // Update users every 10 seconds
+    }
     loadStock();
+});
+
+// Draggable admin menu
+adminMenu.addEventListener('mousedown', (e) => {
+    if (e.target.classList.contains('admin-header')) {
+        isDragging = true;
+        currentX = e.clientX - xOffset;
+        currentY = e.clientY - yOffset;
+    }
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+        e.preventDefault();
+        xOffset = e.clientX - currentX;
+        yOffset = e.clientY - currentY;
+        adminMenu.style.left = `${xOffset}px`;
+        adminMenu.style.top = `${yOffset}px`;
+    }
+});
+
+document.addEventListener('mouseup', () => {
+    isDragging = false;
+});
+
+closeAdminBtn.addEventListener('click', () => {
+    adminMenu.style.display = 'none';
 });
 
 function loadStock() {
     fetch(`${apiUrl}/stock`)
         .then(res => res.json())
         .then(items => {
-            stockItems = items; // Cache stock for name lookup
+            stockItems = items;
             itemsDiv.innerHTML = '';
             items.forEach(item => {
                 const div = document.createElement('div');
@@ -38,12 +79,11 @@ function loadStock() {
         .catch(err => console.error(err));
 }
 
-// Poll stock every 10 seconds
 setInterval(loadStock, 10000);
 
 window.addToCart = function(id) {
     const item = stockItems.find(i => i.id === id);
-    if (!item) return; // Item not found
+    if (!item) return;
     const existing = cart.find(c => c.id === id);
     if (existing) {
         existing.quantity++;
@@ -98,6 +138,75 @@ logoutBtn.addEventListener('click', () => {
     cart = [];
     updateCart();
     resultDiv.textContent = '';
+    adminMenu.style.display = 'none';
     loginDiv.style.display = 'block';
     shopDiv.style.display = 'none';
 });
+
+stockForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('itemId').value;
+    const name = document.getElementById('itemName').value;
+    const price = parseFloat(document.getElementById('itemPrice').value);
+    const stock = parseInt(document.getElementById('itemStock').value);
+    const item = { id: id ? parseInt(id) : null, name, price, stock };
+    
+    fetch(`${apiUrl}/update-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item)
+    })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                loadStock();
+                stockForm.reset();
+                resultDiv.textContent = 'Stock updated successfully!';
+            } else {
+                resultDiv.textContent = `Error: ${result.error}`;
+            }
+        })
+        .catch(err => {
+            resultDiv.textContent = `Error: ${err.message}`;
+        });
+});
+
+deleteItemBtn.addEventListener('click', () => {
+    const id = document.getElementById('itemId').value;
+    if (!id) {
+        resultDiv.textContent = 'Please enter an Item ID to delete';
+        return;
+    }
+    fetch(`${apiUrl}/update-stock`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: parseInt(id) })
+    })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                loadStock();
+                stockForm.reset();
+                resultDiv.textContent = 'Item deleted successfully!';
+            } else {
+                resultDiv.textContent = `Error: ${result.error}`;
+            }
+        })
+        .catch(err => {
+            resultDiv.textContent = `Error: ${err.message}`;
+        });
+});
+
+function loadOnlineUsers() {
+    fetch(`${apiUrl}/users`)
+        .then(res => res.json())
+        .then(users => {
+            onlineUsersDiv.innerHTML = '';
+            users.forEach(user => {
+                const div = document.createElement('div');
+                div.textContent = `${user.name} (${user.email})`;
+                onlineUsersDiv.appendChild(div);
+            });
+        })
+        .catch(err => console.error(err));
+}
