@@ -23,7 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const stockForm = document.getElementById('stockForm');
     const deleteItemBtn = document.getElementById('deleteItemBtn');
     const closeAdminBtn = document.getElementById('closeAdminBtn');
-    const onlineUsersDiv = document.getElementById('onlineUsers');
+    const consoleMenu = document.getElementById('consoleMenu');
+    const consoleInput = document.getElementById('consoleInput');
+    const consoleOutput = document.getElementById('consoleOutput');
     const loginBtn = document.getElementById('loginBtn');
 
     // Validate critical DOM elements
@@ -68,8 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     adminMenu.classList.add('animated');
                     adminMenu.style.display = 'block';
                     console.log('Admin menu displayed');
-                    loadOnlineUsers();
-                    setInterval(loadOnlineUsers, 10000); // Update users every 10 seconds
                 } else {
                     console.error('Admin menu element not found');
                     resultDiv.textContent = 'Error: Admin menu not found';
@@ -106,12 +106,61 @@ document.addEventListener('DOMContentLoaded', () => {
         if (closeAdminBtn) {
             closeAdminBtn.addEventListener('click', () => {
                 adminMenu.style.display = 'none';
+                if (consoleMenu) consoleMenu.style.display = 'none';
             });
         }
     }
 
+    // Console menu logic
+    if (consoleMenu && consoleInput && consoleOutput) {
+        consoleInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const command = consoleInput.value.trim().toLowerCase();
+                consoleInput.value = '';
+                processConsoleCommand(command);
+            }
+        });
+    }
+
+    function processConsoleCommand(command) {
+        const output = document.createElement('div');
+        output.classList.add('console-line');
+        switch (command) {
+            case 'clear':
+                consoleOutput.innerHTML = '';
+                output.textContent = 'Console cleared';
+                break;
+            case 'stock':
+                output.textContent = `Current stock: ${stockItems.map(item => `${item.name} (ID: ${item.id}, Price: $${item.price}, Stock: ${item.stock})`).join(', ') || 'No items'}`;
+                break;
+            case 'help':
+                output.textContent = 'Commands: clear (clear console), stock (list stock), help (show this)';
+                break;
+            default:
+                output.textContent = `Unknown command: ${command}. Type 'help' for commands.`;
+        }
+        consoleOutput.appendChild(output);
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }
+
+    // Keybinds for admin
+    document.addEventListener('keydown', (e) => {
+        if (window.currentUser && window.currentUser.name === 'Administrator' && window.currentUser.email === 'noreply.pharmaville@gmail.com') {
+            if (e.key.toLowerCase() === 'a' && adminMenu) {
+                adminMenu.style.display = adminMenu.style.display === 'block' ? 'none' : 'block';
+                if (adminMenu.style.display === 'none' && consoleMenu) {
+                    consoleMenu.style.display = 'none';
+                }
+                console.log(`Admin panel toggled: ${adminMenu.style.display}`);
+            }
+            if (e.key.toLowerCase() === 'c' && consoleMenu && adminMenu.style.display === 'block') {
+                consoleMenu.style.display = consoleMenu.style.display === 'block' ? 'none' : 'block';
+                console.log(`Console menu toggled: ${consoleMenu.style.display}`);
+            }
+        }
+    });
+
     function loadStock() {
-        // Render cached stock to prevent flicker
         if (stockItems.length > 0) {
             console.log('Rendering cached stock:', stockItems);
             renderStock(stockItems);
@@ -286,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ id: parseInt(id) })
             })
                 .then(res => {
-                    if (!res.ok) throw new Error(`HTTP ${res.status}: Stock deletion failed`);
+                    if (!res.ok) throw new Error(`HTML ${res.status}: Stock deletion failed`);
                     return res.json();
                 })
                 .then(result => {
@@ -303,34 +352,5 @@ document.addEventListener('DOMContentLoaded', () => {
                     resultDiv.textContent = `Error deleting stock: ${err.message}`;
                 });
         });
-    }
-
-    function loadOnlineUsers() {
-        if (!onlineUsersDiv) {
-            console.error('Online users div not found');
-            return;
-        }
-        fetch(`${apiUrl}/users`)
-            .then(res => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch users`);
-                return res.json();
-            })
-            .then(users => {
-                onlineUsersDiv.innerHTML = '';
-                if (users.length === 0) {
-                    onlineUsersDiv.textContent = 'No users online';
-                } else {
-                    users.forEach(user => {
-                        const div = document.createElement('div');
-                        div.textContent = `${user.name} (${user.email})`;
-                        div.classList.add('animated');
-                        onlineUsersDiv.appendChild(div);
-                    });
-                }
-            })
-            .catch(err => {
-                console.error('Users load error:', err);
-                onlineUsersDiv.textContent = `Error loading users: ${err.message}`;
-            });
     }
 });
