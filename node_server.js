@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER || 'noreply.pharmaville@gmail.com', // Your Gmail
-    pass: process.env.EMAIL_PASS || 'PharmavilleWeb123' // Generate from Google settings
+    pass: process.env.EMAIL_PASS || 'ljxa sarm aapp zsie' // Generate from Google settings
   }
 });
 
