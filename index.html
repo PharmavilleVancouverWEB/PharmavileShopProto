@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pharmaville Shop</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="login">
+        <form id="loginForm">
+            <input type="text" id="name" placeholder="Name" required>
+            <input type="email" id="email" placeholder="Email" required>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+    <div id="shop" style="display: none;">
+        <h1>Items in Stock</h1>
+        <div id="items"></div>
+        <h2>Your Cart</h2>
+        <div id="cart"></div>
+        <button id="orderBtn">Place Order</button>
+        <div id="loading" style="display: none;">
+            <img src="https://cdn.dribbble.com/userupload/19445350/file/original-d3c1a1167b18464e2eff6622d09f2dc8.gif" alt="Loading...">
+        </div>
+        <div id="result"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
