@@ -1,14 +1,19 @@
 [
   {
     "id": 1,
-    "name": "Some teva pills",
-    "price": 10,
-    "stock": 1009
+    "name": "Hydrocortisone Cream",
+    "stock": 12
   },
   {
     "id": 2,
-    "name": "some teva pill",
+    "name": "Crutches",
     "price": 20,
-    "stock": 1
+    "stock": 8
+  }
+ {
+    "id": 3,
+    "name": "Heating Pad",
+    "price": 35,
+    "stock": 2
   }
 ]
