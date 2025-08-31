@@ -2,11 +2,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const apiUrl = ''; // Relative path, same domain
     let cart = [];
     let stockItems = []; // Store stock data for name lookup
-    let isDragging = false;
+    let isDraggingAdmin = false;
+    let isDraggingConsole = false;
     let currentX;
     let currentY;
-    let xOffset = 0;
-    let yOffset = 0;
+    let xOffsetAdmin = 0;
+    let yOffsetAdmin = 0;
+    let xOffsetConsole = 0;
+    let yOffsetConsole = 0;
 
     // DOM elements
     const loginForm = document.getElementById('loginForm');
@@ -26,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const consoleMenu = document.getElementById('consoleMenu');
     const consoleInput = document.getElementById('consoleInput');
     const consoleOutput = document.getElementById('consoleOutput');
+    const closeConsoleBtn = document.getElementById('closeConsoleBtn');
     const loginBtn = document.getElementById('loginBtn');
 
     // Validate critical DOM elements
@@ -65,8 +69,27 @@ document.addEventListener('DOMContentLoaded', () => {
             loginDiv.style.display = 'none';
             shopDiv.style.display = 'block';
             shopDiv.classList.add('fade-in');
-            // Admin menu only opens via keybinds, not here
-            loadStock();
+            // Admin menu only opens via keybinds
+            fetch(`${apiUrl}/check-ban`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.banned) {
+                        resultDiv.textContent = 'Error: This email is banned';
+                        loginDiv.style.display = 'block';
+                        shopDiv.style.display = 'none';
+                        window.currentUser = null;
+                    } else {
+                        loadStock();
+                    }
+                })
+                .catch(err => {
+                    console.error('Ban check error:', err);
+                    resultDiv.textContent = `Error checking ban status: ${err.message}`;
+                });
         }, 1000); // Match animation duration
     });
 
@@ -74,30 +97,60 @@ document.addEventListener('DOMContentLoaded', () => {
     if (adminMenu) {
         adminMenu.addEventListener('mousedown', (e) => {
             if (e.target.classList.contains('admin-header')) {
-                isDragging = true;
-                currentX = e.clientX - xOffset;
-                currentY = e.clientY - yOffset;
+                isDraggingAdmin = true;
+                currentX = e.clientX - xOffsetAdmin;
+                currentY = e.clientY - yOffsetAdmin;
             }
         });
 
         document.addEventListener('mousemove', (e) => {
-            if (isDragging) {
+            if (isDraggingAdmin) {
                 e.preventDefault();
-                xOffset = e.clientX - currentX;
-                yOffset = e.clientY - currentY;
-                adminMenu.style.left = `${xOffset}px`;
-                adminMenu.style.top = `${yOffset}px`;
+                xOffsetAdmin = e.clientX - currentX;
+                yOffsetAdmin = e.clientY - currentY;
+                adminMenu.style.left = `${xOffsetAdmin}px`;
+                adminMenu.style.top = `${yOffsetAdmin}px`;
             }
         });
 
         document.addEventListener('mouseup', () => {
-            isDragging = false;
+            isDraggingAdmin = false;
         });
 
         if (closeAdminBtn) {
             closeAdminBtn.addEventListener('click', () => {
                 adminMenu.style.display = 'none';
-                if (consoleMenu) consoleMenu.style.display = 'none';
+            });
+        }
+    }
+
+    // Draggable console menu
+    if (consoleMenu) {
+        consoleMenu.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('admin-header')) {
+                isDraggingConsole = true;
+                currentX = e.clientX - xOffsetConsole;
+                currentY = e.clientY - yOffsetConsole;
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDraggingConsole) {
+                e.preventDefault();
+                xOffsetConsole = e.clientX - currentX;
+                yOffsetConsole = e.clientY - currentY;
+                consoleMenu.style.left = `${xOffsetConsole}px`;
+                consoleMenu.style.top = `${yOffsetConsole}px`;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDraggingConsole = false;
+        });
+
+        if (closeConsoleBtn) {
+            closeConsoleBtn.addEventListener('click', () => {
+                consoleMenu.style.display = 'none';
             });
         }
     }
@@ -106,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (consoleMenu && consoleInput && consoleOutput) {
         consoleInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                const command = consoleInput.value.trim().toLowerCase();
+                const command = consoleInput.value.trim();
                 consoleInput.value = '';
                 processConsoleCommand(command);
             }
@@ -114,24 +167,145 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function processConsoleCommand(command) {
+        if (!window.currentUser || window.currentUser.name !== 'Administrator' || window.currentUser.email !== 'noreply.pharmaville@gmail.com') {
+            return; // Only admin can use console
+        }
         const output = document.createElement('div');
         output.classList.add('console-line');
-        switch (command) {
-            case 'clear':
-                consoleOutput.innerHTML = '';
-                output.textContent = 'Console cleared';
-                break;
-            case 'stock':
-                output.textContent = `Current stock: ${stockItems.map(item => `${item.name} (ID: ${item.id}, Price: $${item.price}, Stock: ${item.stock})`).join(', ') || 'No items'}`;
-                break;
-            case 'help':
-                output.textContent = 'Commands: clear (clear console), stock (list stock), help (show this)';
-                break;
-            default:
-                output.textContent = `Unknown command: ${command}. Type 'help' for commands.`;
+
+        if (command === 'p/endsessionall') {
+            fetch(`${apiUrl}/end-sessions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(res => res.json())
+                .then(result => {
+                    output.textContent = result.success ? 'All sessions ended' : `Error: ${result.error}`;
+                    consoleOutput.appendChild(output);
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                })
+                .catch(err => {
+                    output.textContent = `Error: ${err.message}`;
+                    consoleOutput.appendChild(output);
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                });
+        } else if (command.startsWith('p/alertall(') && command.endsWith(')')) {
+            const message = command.slice(11, -1).replace(/['"]/g, '');
+            if (!message) {
+                output.textContent = 'Error: Message required for p/alertall';
+                consoleOutput.appendChild(output);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                return;
+            }
+            fetch(`${apiUrl}/alert-all`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message })
+            })
+                .then(res => res.json())
+                .then(result => {
+                    output.textContent = result.success ? `Alert sent: ${message}` : `Error: ${result.error}`;
+                    consoleOutput.appendChild(output);
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                })
+                .catch(err => {
+                    output.textContent = `Error: ${err.message}`;
+                    consoleOutput.appendChild(output);
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                });
+        } else if (command === 'p/clearcartall') {
+            fetch(`${apiUrl}/clear-carts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(res => res.json())
+                .then(result => {
+                    output.textContent = result.success ? 'All carts cleared' : `Error: ${result.error}`;
+                    consoleOutput.appendChild(output);
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                })
+                .catch(err => {
+                    output.textContent = `Error: ${err.message}`;
+                    consoleOutput.appendChild(output);
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                });
+        } else if (command === 'p/endsession20m') {
+            fetch(`${apiUrl}/end-sessions-20m`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(res => res.json())
+                .then(result => {
+                    output.textContent = result.success ? `Sessions inactive for 20m ended: ${result.ended}` : `Error: ${result.error}`;
+                    consoleOutput.appendChild(output);
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                })
+                .catch(err => {
+                    output.textContent = `Error: ${err.message}`;
+                    consoleOutput.appendChild(output);
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                });
+        } else if (command.startsWith('p/shutdownsite(') && command.endsWith(')')) {
+            const secondsMatch = command.match(/^p\/shutdownsite\((\d+)\)$/);
+            if (!secondsMatch) {
+                output.textContent = 'Error: Invalid seconds for p/shutdownsite';
+                consoleOutput.appendChild(output);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                return;
+            }
+            const seconds = parseInt(secondsMatch[1]);
+            if (isNaN(seconds) || seconds <= 0) {
+                output.textContent = 'Error: Seconds must be a positive number';
+                consoleOutput.appendChild(output);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                return;
+            }
+            fetch(`${apiUrl}/shutdown-site`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ seconds })
+            })
+                .then(res => res.json())
+                .then(result => {
+                    output.textContent = result.success ? `Site shutting down for ${seconds} seconds` : `Error: ${result.error}`;
+                    consoleOutput.appendChild(output);
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                })
+                .catch(err => {
+                    output.textContent = `Error: ${err.message}`;
+                    consoleOutput.appendChild(output);
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                });
+        } else if (command.startsWith('p/banemail(') && command.endsWith(')')) {
+            const emailMatch = command.match(/^p\/banemail\(['"]([^'"]+)['"]\)$/);
+            if (!emailMatch) {
+                output.textContent = 'Error: Invalid email for p/banemail';
+                consoleOutput.appendChild(output);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                return;
+            }
+            const email = emailMatch[1].toLowerCase();
+            fetch(`${apiUrl}/ban-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            })
+                .then(res => res.json())
+                .then(result => {
+                    output.textContent = result.success ? `Email banned: ${email}` : `Error: ${result.error}`;
+                    consoleOutput.appendChild(output);
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                })
+                .catch(err => {
+                    output.textContent = `Error: ${err.message}`;
+                    consoleOutput.appendChild(output);
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                });
+        } else {
+            output.textContent = `Unknown command: ${command}. Commands: p/endsessionall, p/alertall("message"), p/clearcartall, p/endsession20m, p/shutdownsite(seconds), p/banemail("email")`;
+            consoleOutput.appendChild(output);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
         }
-        consoleOutput.appendChild(output);
-        consoleOutput.scrollTop = consoleOutput.scrollHeight;
     }
 
     // Keybinds for admin
@@ -139,12 +313,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.currentUser && window.currentUser.name === 'Administrator' && window.currentUser.email === 'noreply.pharmaville@gmail.com') {
             if (e.key.toLowerCase() === 'a' && adminMenu) {
                 adminMenu.style.display = adminMenu.style.display === 'block' ? 'none' : 'block';
-                if (adminMenu.style.display === 'none' && consoleMenu) {
-                    consoleMenu.style.display = 'none';
-                }
                 console.log(`Admin panel toggled: ${adminMenu.style.display}`);
             }
-            if (e.key.toLowerCase() === 'c' && consoleMenu && adminMenu.style.display === 'block') {
+            if (e.key.toLowerCase() === 'c' && consoleMenu) {
                 consoleMenu.style.display = consoleMenu.style.display === 'block' ? 'none' : 'block';
                 console.log(`Console menu toggled: ${consoleMenu.style.display}`);
             }
