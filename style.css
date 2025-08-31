@@ -24,16 +24,11 @@ body {
     width: 100%;
     max-width: 400px;
     text-align: center;
-    transition: transform 0.3s ease, opacity 0.3s ease;
-    opacity: 1;
+    animation: fadeIn 0.5s ease;
 }
 
-.login-form.animate-in {
-    animation: fade-in 0.5s ease;
-}
-
-@keyframes fade-in {
-    from { opacity: 0; transform: translateY(-20px); }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
@@ -41,12 +36,6 @@ body {
     margin-bottom: 20px;
     font-size: 1.5rem;
     color: #1a73e8;
-    animation: text-slide 0.5s ease;
-}
-
-@keyframes text-slide {
-    from { transform: translateX(-20px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
 }
 
 .login-form input {
@@ -56,26 +45,13 @@ body {
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 0.9rem;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    animation: input-slide 0.5s ease forwards;
-}
-
-.login-form input:nth-child(1) {
-    animation-delay: 0.1s;
-}
-
-.login-form input:nth-child(2) {
-    animation-delay: 0.2s;
-}
-
-@keyframes input-slide {
-    from { transform: translateX(-20px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 .login-form input:focus {
     border-color: #1a73e8;
     box-shadow: 0 0 5px rgba(26, 115, 232, 0.5);
+    transform: scale(1.02);
     animation: typing-glow 1s infinite alternate;
 }
 
@@ -90,18 +66,12 @@ body {
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.9rem;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    animation: button-slide 0.5s ease forwards;
-    animation-delay: 0.3s;
-}
-
-@keyframes button-slide {
-    from { transform: translateX(-20px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .btn:hover {
     transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .btn:active {
@@ -122,16 +92,6 @@ body {
 
 .btn-primary:hover {
     background-color: #1557b0;
-}
-
-.btn-chat {
-    background-color: #34c759;
-    color: white;
-    margin-top: 10px;
-}
-
-.btn-chat:hover {
-    background-color: #2ca44e;
 }
 
 .btn-secondary {
@@ -159,17 +119,27 @@ body {
     font-size: 1rem;
     color: #333;
     cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.btn-close:hover {
+    color: #dc3545;
+}
+
+.btn-chat {
+    background-color: #ffc107;
+    color: #333;
+    margin-top: 10px;
+}
+
+.btn-chat:hover {
+    background-color: #e0a800;
 }
 
 .shop-container {
     max-width: 1000px;
     margin: 0 auto;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-}
-
-.shop-container.fade-in {
-    opacity: 1;
+    animation: fadeIn 0.5s ease;
 }
 
 .shop-grid {
@@ -183,14 +153,20 @@ body {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    animation: fade-in 0.5s ease;
+    animation: slideIn 0.5s ease;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
 
 .stock-section h2, .cart-section h2 {
     font-size: 1.25rem;
     margin-bottom: 15px;
     color: #1a73e8;
-    animation: text-slide 0.5s ease;
+    animation: fadeIn 0.5s ease 0.2s forwards;
+    opacity: 0;
 }
 
 .items-list div, .cart-list div {
@@ -201,16 +177,8 @@ body {
     justify-content: space-between;
     align-items: center;
     font-size: 0.9rem;
-    animation: item-slide 0.5s ease forwards;
-}
-
-.items-list div:nth-child(odd), .cart-list div:nth-child(odd) {
-    animation-delay: 0.1s;
-}
-
-@keyframes item-slide {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    animation: fadeIn 0.5s ease;
+    opacity: 0;
 }
 
 .items-list div:last-child, .cart-list div:last-child {
@@ -225,12 +193,13 @@ body {
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .items-list button:hover {
     background-color: #2ca44e;
     transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .items-list button:active {
@@ -252,19 +221,20 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    animation: fade-in 0.5s ease;
+    animation: fadeIn 0.5s ease;
 }
 
 .loading-overlay img {
-    width: 240px;
+    width: 240px; /* 2x larger than original 120px */
     height: auto;
     border-radius: 20px; /* Rounded corners for GIF */
-    animation: spin 2s linear infinite;
+    animation: pulse 1.5s infinite;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
 }
 
 .result {
@@ -272,140 +242,75 @@ body {
     font-size: 0.9rem;
     color: #d93025;
     text-align: center;
-    animation: fade-in 0.5s ease;
+    animation: fadeIn 0.5s ease;
 }
 
 .admin-menu {
     position: fixed;
-    top: 50px;
-    left: 50px;
+    top: 100px;
+    left: 100px;
     width: 500px; /* Bigger admin panel */
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border-radius: 12px; /* Refined style with larger radius */
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
     z-index: 2000;
     cursor: move;
-    animation: slide-in 0.5s ease;
-}
-
-@keyframes slide-in {
-    from { transform: translateX(-100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+    animation: slideIn 0.5s ease, fadeIn 0.5s ease;
 }
 
 .admin-header {
     background: #1a73e8;
     color: white;
-    padding: 10px;
-    border-radius: 8px 8px 0 0;
+    padding: 15px; /* Refined padding */
+    border-radius: 12px 12px 0 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    font-weight: bold;
+    animation: fadeIn 0.5s ease;
 }
 
 .admin-section {
-    padding: 15px;
-    animation: fade-in 0.5s ease;
+    padding: 20px; /* Increased padding for bigger panel */
+    animation: slideIn 0.5s ease 0.2s forwards;
+    opacity: 0;
 }
 
 .admin-section h3 {
-    margin-bottom: 10px;
-    font-size: 1.1rem;
-    animation: text-slide 0.5s ease;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
 }
 
 #stockForm input {
     width: 100%;
-    padding: 8px;
-    margin: 5px 0;
+    padding: 10px;
+    margin: 8px 0;
     border: 1px solid #ddd;
-    border-radius: 4px;
+    border-radius: 6px; /* Refined style */
     font-size: 0.9rem;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    animation: input-slide 0.5s ease forwards;
-}
-
-#stockForm input:nth-child(1) {
-    animation-delay: 0.1s;
-}
-
-#stockForm input:nth-child(2) {
-    animation-delay: 0.2s;
-}
-
-#stockForm input:nth-child(3) {
-    animation-delay: 0.3s;
-}
-
-#stockForm input:nth-child(4) {
-    animation-delay: 0.4s;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 #stockForm input:focus {
     border-color: #1a73e8;
     animation: typing-glow 1s infinite alternate;
+    transform: scale(1.02);
 }
 
 #stockForm button {
-    margin-top: 10px;
-    animation: button-slide 0.5s ease forwards;
-    animation-delay: 0.5s;
+    margin-top: 12px;
 }
 
 .online-users div {
-    padding: 5px;
+    padding: 8px;
     border-bottom: 1px solid #eee;
     font-size: 0.9rem;
-    animation: item-slide 0.5s ease forwards;
+    animation: fadeIn 0.5s ease;
+    opacity: 0;
 }
 
-.chat-box, .chat-messages {
-    border: 1px solid #ddd;
-    height: 200px;
-    overflow-y: scroll;
-    margin-bottom: 10px;
-    padding: 10px;
-    background: #f9f9f9;
-    animation: fade-in 0.5s ease;
-}
-
-.chat-modal {
-    position: fixed;
-    top: 50px;
-    right: 50px;
-    width: 400px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    z-index: 2000;
-    animation: slide-in-right 0.5s ease;
-}
-
-@keyframes slide-in-right {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-.chat-header {
-    background: #34c759;
-    color: white;
-    padding: 10px;
-    border-radius: 8px 8px 0 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.chat-messages div {
-    padding: 5px;
-    border-bottom: 1px solid #eee;
-    font-size: 0.9rem;
-    animation: message-slide 0.3s ease;
-}
-
-@keyframes message-slide {
-    from { transform: translateY(10px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+.online-users div:last-child {
+    border-bottom: none;
 }
 
 @media (max-width: 768px) {
@@ -415,10 +320,15 @@ body {
     .cart-section {
         margin-top: 20px;
     }
-    .admin-menu, .chat-modal {
-        width: 90%;
-        left: 5%;
+    .admin-menu {
+        width: 95%;
+        left: 2.5%;
     }
+}
+
+#loginBtn {
+    position: relative;
+    transform-origin: center center;
 }
 
 #loginBtn.expanding {
