@@ -1,4 +1,4 @@
 [
-    { "id": 1, "name": "Band-Aid", "price": 4.99, "stock": 20 },
-    { "id": 2, "name": "Heating Pad", "price": 35, "stock": 3 }
+    { "id": 1, "name": "IDEAL PROTIEN Golden Pancakes", "price": 10, "stock": 9 },
+        { "id": 2, "name": "IDEAL PROTIEN Peanut Butter", "price": 9.98, "stock": 4 }
 ]
