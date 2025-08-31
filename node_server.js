@@ -6,12 +6,12 @@ const nodemailer = require('nodemailer');
 const app = express();
 const PORT = process.env.PORT || 3000; // Use Render's PORT or 3000 locally
 
-// Email configuration (replace with your details)
+// Email configuration (use environment variables for Render)
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'noreply.pharmaville@gmail.com', // Your Gmail
-    pass: 'PharmavilleWeb123' // Generate from Google settings
+    user: process.env.EMAIL_USER || 'noreply.pharmaville@gmail.com', // Your Gmail
+    pass: process.env.EMAIL_PASS || 'PharmavilleWeb123' // Generate from Google settings
   }
 });
 
@@ -70,7 +70,7 @@ app.post('/order', async (req, res) => {
 
     // Send user email
     const userMailOptions = {
-      from: 'yourgmail@gmail.com',
+      from: process.env.EMAIL_USER || 'yourgmail@gmail.com',
       to: email,
       subject: 'Your Order Confirmation',
       text: `Your order:\n${ordered.join('\n')}\n\nNot in stock:\n${notInStock.join('\n') || 'None'}`
@@ -80,7 +80,7 @@ app.post('/order', async (req, res) => {
 
     // Send admin email
     const adminMailOptions = {
-      from: 'yourgmail@gmail.com',
+      from: process.env.EMAIL_USER || 'yourgmail@gmail.com',
       to: HARDCODED_EMAIL,
       subject: 'New Order Notification',
       text: `Order from ${name} (${email}):\n${ordered.join('\n')}\nTotal price: $${totalPrice}\n\nNot fulfilled:\n${notInStock.join('\n') || 'None'}`
