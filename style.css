@@ -1,0 +1,5 @@
+body { font-family: Arial, sans-serif; margin: 20px; }
+form { max-width: 300px; margin: auto; }
+input, button { display: block; margin: 10px 0; padding: 8px; width: 100%; }
+#items div, #cart div { border: 1px solid #ddd; padding: 10px; margin: 10px 0; }
+#loading img { width: 100px; }
