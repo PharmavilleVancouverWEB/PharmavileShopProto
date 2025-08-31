@@ -24,13 +24,29 @@ body {
     width: 100%;
     max-width: 400px;
     text-align: center;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 1;
+}
+
+.login-form.animate-in {
+    animation: fade-in 0.5s ease;
+}
+
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .login-form h2 {
     margin-bottom: 20px;
     font-size: 1.5rem;
     color: #1a73e8;
+    animation: text-slide 0.5s ease;
+}
+
+@keyframes text-slide {
+    from { transform: translateX(-20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
 
 .login-form input {
@@ -41,6 +57,20 @@ body {
     border-radius: 4px;
     font-size: 0.9rem;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    animation: input-slide 0.5s ease forwards;
+}
+
+.login-form input:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.login-form input:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+@keyframes input-slide {
+    from { transform: translateX(-20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
 
 .login-form input:focus {
@@ -61,6 +91,13 @@ body {
     cursor: pointer;
     font-size: 0.9rem;
     transition: background-color 0.3s ease, transform 0.2s ease;
+    animation: button-slide 0.5s ease forwards;
+    animation-delay: 0.3s;
+}
+
+@keyframes button-slide {
+    from { transform: translateX(-20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
 
 .btn:hover {
@@ -85,6 +122,16 @@ body {
 
 .btn-primary:hover {
     background-color: #1557b0;
+}
+
+.btn-chat {
+    background-color: #34c759;
+    color: white;
+    margin-top: 10px;
+}
+
+.btn-chat:hover {
+    background-color: #2ca44e;
 }
 
 .btn-secondary {
@@ -136,12 +183,14 @@ body {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    animation: fade-in 0.5s ease;
 }
 
 .stock-section h2, .cart-section h2 {
     font-size: 1.25rem;
     margin-bottom: 15px;
     color: #1a73e8;
+    animation: text-slide 0.5s ease;
 }
 
 .items-list div, .cart-list div {
@@ -152,6 +201,16 @@ body {
     justify-content: space-between;
     align-items: center;
     font-size: 0.9rem;
+    animation: item-slide 0.5s ease forwards;
+}
+
+.items-list div:nth-child(odd), .cart-list div:nth-child(odd) {
+    animation-delay: 0.1s;
+}
+
+@keyframes item-slide {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 .items-list div:last-child, .cart-list div:last-child {
@@ -193,11 +252,19 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    animation: fade-in 0.5s ease;
 }
 
 .loading-overlay img {
-    width: 240px; /* 2x larger than original 120px */
+    width: 240px;
     height: auto;
+    border-radius: 20px; /* Rounded corners for GIF */
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .result {
@@ -205,22 +272,184 @@ body {
     font-size: 0.9rem;
     color: #d93025;
     text-align: center;
+    animation: fade-in 0.5s ease;
 }
 
 .admin-menu {
     position: fixed;
-    top: 100px;
-    left: 100px;
-    width: 400px;
+    top: 50px;
+    left: 50px;
+    width: 500px; /* Bigger admin panel */
     background: white;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     z-index: 2000;
     cursor: move;
+    animation: slide-in 0.5s ease;
+}
+
+@keyframes slide-in {
+    from { transform: translateX(-100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
 
 .admin-header {
     background: #1a73e8;
     color: white;
     padding: 10px;
-    border
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-section {
+    padding: 15px;
+    animation: fade-in 0.5s ease;
+}
+
+.admin-section h3 {
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+    animation: text-slide 0.5s ease;
+}
+
+#stockForm input {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    animation: input-slide 0.5s ease forwards;
+}
+
+#stockForm input:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+#stockForm input:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+#stockForm input:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+#stockForm input:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+#stockForm input:focus {
+    border-color: #1a73e8;
+    animation: typing-glow 1s infinite alternate;
+}
+
+#stockForm button {
+    margin-top: 10px;
+    animation: button-slide 0.5s ease forwards;
+    animation-delay: 0.5s;
+}
+
+.online-users div {
+    padding: 5px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+    animation: item-slide 0.5s ease forwards;
+}
+
+.chat-box, .chat-messages {
+    border: 1px solid #ddd;
+    height: 200px;
+    overflow-y: scroll;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: #f9f9f9;
+    animation: fade-in 0.5s ease;
+}
+
+.chat-modal {
+    position: fixed;
+    top: 50px;
+    right: 50px;
+    width: 400px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 2000;
+    animation: slide-in-right 0.5s ease;
+}
+
+@keyframes slide-in-right {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.chat-header {
+    background: #34c759;
+    color: white;
+    padding: 10px;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-messages div {
+    padding: 5px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+    animation: message-slide 0.3s ease;
+}
+
+@keyframes message-slide {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@media (max-width: 768px) {
+    .shop-grid {
+        grid-template-columns: 1fr;
+    }
+    .cart-section {
+        margin-top: 20px;
+    }
+    .admin-menu, .chat-modal {
+        width: 90%;
+        left: 5%;
+    }
+}
+
+#loginBtn.expanding {
+    animation: expand-blue 1s forwards;
+}
+
+@keyframes expand-blue {
+    0% {
+        transform: scale(1);
+        background-color: #1a73e8;
+    }
+    50% {
+        transform: scale(1.2);
+        background-color: #1557b0;
+    }
+    100% {
+        transform: scale(50);
+        background-color: #1a73e8;
+        border-radius: 0;
+        width: 100vw;
+        height: 100vh;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(50);
+        z-index: 9999;
+    }
+}
+
+.blue-fade {
+    background-color: #1a73e8;
+    transition: opacity 0.5s ease;
+    opacity: 0;
+}
