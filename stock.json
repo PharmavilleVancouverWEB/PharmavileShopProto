@@ -1,4 +1,4 @@
 [
-    { "id": 1, "Band-Aid": "Item1", "price": 7.93, "stock": 5 },
-    { "id": 2, "Hydrocortisone": "Item2", "price": 12.33, "stock": 3 }
+    { "id": 1, "name": "Item1", "price": 10, "stock": 5 },
+    { "id": 2, "name": "Item2", "price": 20, "stock": 3 }
 ]
