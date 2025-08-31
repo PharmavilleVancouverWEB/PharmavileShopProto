@@ -25,10 +25,30 @@ let carts = new Map(); // email -> cart array
 let isShutdown = false;
 let shutdownEndTime = null;
 
-if (fs.existsSync(stockFile)) {
-    const data = JSON.parse(fs.readFileSync(stockFile));
-    stock = data.items || [];
-    bannedEmails = data.bannedEmails || [];
+// Initialize stock.json if it doesn't exist
+try {
+    if (!fs.existsSync(stockFile)) {
+        console.log('stock.json not found, creating with initial data');
+        const initialData = {
+            items: [
+                { id: 1, name: 'Item1', price: 10, stock: 5 },
+                { id: 2, name: 'Item2', price: 20, stock: 3 }
+            ],
+            bannedEmails: []
+        };
+        fs.writeFileSync(stockFile, JSON.stringify(initialData, null, 2));
+        stock = initialData.items;
+        bannedEmails = initialData.bannedEmails;
+    } else {
+        const data = JSON.parse(fs.readFileSync(stockFile));
+        stock = data.items || [];
+        bannedEmails = data.bannedEmails || [];
+    }
+} catch (err) {
+    console.error('Error initializing stock.json:', err);
+    // Fallback to empty data to prevent crash
+    stock = [];
+    bannedEmails = [];
 }
 
 app.get('/stock', (req, res) => {
@@ -69,8 +89,13 @@ app.post('/order', (req, res) => {
         }
     });
 
-    fs.writeFileSync(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
-    carts.set(email, []); // Clear cart after order
+    try {
+        fs.writeFileSync(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
+        carts.set(email, []); // Clear cart after order
+    } catch (err) {
+        console.error('Error writing stock.json:', err);
+        return res.status(500).json({ success: false, error: 'Failed to update stock' });
+    }
 
     const mailOptions = {
         from: 'noreply.pharmaville@gmail.com',
@@ -111,7 +136,12 @@ app.post('/update-stock', (req, res) => {
         stock.push({ id: newId, name, price, stock: stockQty });
     }
 
-    fs.writeFileSync(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
+    try {
+        fs.writeFileSync(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
+    } catch (err) {
+        console.error('Error writing stock.json:', err);
+        return res.status(500).json({ success: false, error: 'Failed to update stock' });
+    }
     res.json({ success: true });
 });
 
@@ -130,7 +160,12 @@ app.delete('/update-stock', (req, res) => {
     }
 
     stock.splice(index, 1);
-    fs.writeFileSync(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
+    try {
+        fs.writeFileSync(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
+    } catch (err) {
+        console.error('Error writing stock.json:', err);
+        return res.status(500).json({ success: false, error: 'Failed to update stock' });
+    }
     res.json({ success: true });
 });
 
@@ -144,8 +179,7 @@ app.post('/alert-all', (req, res) => {
     if (!message) {
         return res.status(400).json({ success: false, error: 'Message required' });
     }
-    // In a real app, broadcast to all clients (e.g., via WebSocket)
-    // Here, we store the message for clients to poll
+    // Store message for polling
     res.json({ success: true, message });
 });
 
@@ -178,7 +212,9 @@ app.post('/shutdown-site', (req, res) => {
     schedule.scheduleJob(new Date(shutdownEndTime), () => {
         isShutdown = false;
         shutdownEndTime = null;
+        console.log('Site shutdown ended');
     });
+    console.log(`Site shutting down for ${seconds} seconds`);
     res.json({ success: true });
 });
 
@@ -192,9 +228,20 @@ app.post('/ban-email', (req, res) => {
         bannedEmails.push(normalizedEmail);
         sessions.delete(normalizedEmail);
         carts.delete(normalizedEmail);
-        fs.writeFileSync(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
+        try {
+            fs.writeFileSync(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
+        } catch (err) {
+            console.error('Error writing stock.json:', err);
+            return res.status(500).json({ success: false, error: 'Failed to update banned emails' });
+        }
     }
     res.json({ success: true });
+});
+
+// Global error handler to prevent crashes
+app.use((err, req, res, next) => {
+    console.error('Unhandled error:', err);
+    res.status(500).json({ success: false, error: 'Internal server error' });
 });
 
 app.listen(port, () => {
