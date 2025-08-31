@@ -10,10 +10,4 @@
     "price": 20,
     "stock": 8
   }
-  {
-    "id": 3,
-    "name": "Heating Pad",
-    "price": 35,
-    "stock": 2
-  }
 ]
