@@ -1,13 +1,13 @@
 [
   {
     "id": 1,
-    "name": "Iboprufen i dunno",
+    "name": "Item1",
     "price": 10,
     "stock": 5
   },
   {
     "id": 2,
-    "name": "betadopamine yes halal",
+    "name": "Item2",
     "price": 20,
     "stock": 3
   }
