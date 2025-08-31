@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const fs = require('fs').promises;
 const path = require('path');
@@ -26,6 +27,7 @@ app.use((req, res, next) => {
     const sessionId = req.headers['x-session-id'] || Math.random().toString(36).slice(2);
     res.setHeader('x-session-id', sessionId);
     if (req.body.name && req.body.email) {
+        console.log('Tracking session:', { sessionId, name: req.body.name, email: req.body.email });
         sessions.set(sessionId, { name: req.body.name, email: req.body.email });
     }
     setTimeout(() => sessions.delete(sessionId), 30 * 60 * 1000); // Expire after 30 minutes
@@ -111,19 +113,25 @@ app.post('/order', async (req, res) => {
 // Update stock
 app.post('/update-stock', async (req, res) => {
     const { id, name, price, stock } = req.body;
-    if (!name || price == null || stock == null) {
+    if (!name || name.trim() === '' || price == null || price < 0 || stock == null || stock < 0) {
         console.error('Invalid stock update request:', { id, name, price, stock });
-        return res.status(400).json({ success: false, error: 'Invalid item data' });
+        return res.status(400).json({ success: false, error: 'Invalid item data: name, price (≥0), and stock (≥0) required' });
     }
     try {
-        let stockData = JSON.parse(await fs.readFile('stock.json', 'utf8'));
+        let stockData = [];
+        try {
+            stockData = JSON.parse(await fs.readFile('stock.json', 'utf8'));
+        } catch (err) {
+            console.warn('stock.json not found or invalid, initializing empty array');
+            stockData = [];
+        }
         if (id === null) {
             const newId = stockData.length ? Math.max(...stockData.map(i => i.id)) + 1 : 1;
             stockData.push({ id: newId, name, price, stock });
         } else {
             const itemIndex = stockData.findIndex(i => i.id === id);
             if (itemIndex === -1) {
-                return res.status(404).json({ success: false, error: 'Item not found' });
+                return res.status(404).json({ success: false, error: `Item with ID ${id} not found` });
             }
             stockData[itemIndex] = { id, name, price, stock };
         }
@@ -131,35 +139,42 @@ app.post('/update-stock', async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error('Stock update error:', err);
-        res.status(500).json({ success: false, error: err.message });
+        res.status(500).json({ success: false, error: `Failed to update stock: ${err.message}` });
     }
 });
 
 // Delete stock item
 app.delete('/update-stock', async (req, res) => {
     const { id } = req.body;
-    if (!id) {
+    if (!id || isNaN(id) || id <= 0) {
         console.error('Invalid stock deletion request:', { id });
-        return res.status(400).json({ success: false, error: 'Item ID required' });
+        return res.status(400).json({ success: false, error: 'Valid Item ID required' });
     }
     try {
-        let stockData = JSON.parse(await fs.readFile('stock.json', 'utf8'));
+        let stockData = [];
+        try {
+            stockData = JSON.parse(await fs.readFile('stock.json', 'utf8'));
+        } catch (err) {
+            console.warn('stock.json not found or invalid, initializing empty array');
+            stockData = [];
+        }
         const itemIndex = stockData.findIndex(i => i.id === id);
         if (itemIndex === -1) {
-            return res.status(404).json({ success: false, error: 'Item not found' });
+            return res.status(404).json({ success: false, error: `Item with ID ${id} not found` });
         }
         stockData.splice(itemIndex, 1);
         await fs.writeFile('stock.json', JSON.stringify(stockData, null, 2));
         res.json({ success: true });
     } catch (err) {
         console.error('Stock deletion error:', err);
-        res.status(500).json({ success: false, error: err.message });
+        res.status(500).json({ success: false, error: `Failed to delete stock: ${err.message}` });
     }
 });
 
 // Get online users
 app.get('/users', (req, res) => {
     const users = Array.from(sessions.values());
+    console.log('Returning online users:', users);
     res.json(users);
 });
 
