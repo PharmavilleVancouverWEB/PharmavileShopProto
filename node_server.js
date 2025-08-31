@@ -84,7 +84,6 @@ app.post('/order', async (req, res) => {
       to: HARDCODED_EMAIL,
       subject: `New Order from ${name}`,
       text: `Order from ${name} (${email}):\n${ordered.join('\n')}\nTotal price: $${totalPrice}\n\nNot fulfilled:\n${notInStock.join('\n') || 'None'}`
-      console.log(`Email sent to ${email}`);
     };
 
     await transporter.sendMail(adminMailOptions);
