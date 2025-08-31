@@ -1,212 +1,258 @@
-const apiUrl = ''; // Relative path, same domain
-let cart = [];
-let stockItems = []; // Store stock data for name lookup
-let isDragging = false;
-let currentX;
-let currentY;
-let xOffset = 0;
-let yOffset = 0;
+document.addEventListener('DOMContentLoaded', () => {
+    const apiUrl = ''; // Relative path, same domain
+    let cart = [];
+    let stockItems = []; // Store stock data for name lookup
+    let isDragging = false;
+    let currentX;
+    let currentY;
+    let xOffset = 0;
+    let yOffset = 0;
 
-const loginForm = document.getElementById('loginForm');
-const loginDiv = document.getElementById('login');
-const shopDiv = document.getElementById('shop');
-const itemsDiv = document.getElementById('items');
-const cartDiv = document.getElementById('cart');
-const orderBtn = document.getElementById('orderBtn');
-const logoutBtn = document.getElementById('logoutBtn');
-const loadingDiv = document.getElementById('loading');
-const resultDiv = document.getElementById('result');
-const adminMenu = document.getElementById('adminMenu');
-const stockForm = document.getElementById('stockForm');
-const deleteItemBtn = document.getElementById('deleteItemBtn');
-const closeAdminBtn = document.getElementById('closeAdminBtn');
-const onlineUsersDiv = document.getElementById('onlineUsers');
+    // DOM elements
+    const loginForm = document.getElementById('loginForm');
+    const loginDiv = document.getElementById('login');
+    const shopDiv = document.getElementById('shop');
+    const itemsDiv = document.getElementById('items');
+    const cartDiv = document.getElementById('cart');
+    const orderBtn = document.getElementById('orderBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const loadingDiv = document.getElementById('loading');
+    const resultDiv = document.getElementById('result');
+    const adminMenu = document.getElementById('adminMenu');
+    const stockForm = document.getElementById('stockForm');
+    const deleteItemBtn = document.getElementById('deleteItemBtn');
+    const closeAdminBtn = document.getElementById('closeAdminBtn');
+    const onlineUsersDiv = document.getElementById('onlineUsers');
 
-loginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const name = document.getElementById('name').value;
-    const email = document.getElementById('email').value;
-    window.currentUser = { name, email };
-    loginDiv.style.display = 'none';
-    shopDiv.style.display = 'block';
-    if (name === 'Administrator' && email === 'noreply.pharmaville@gmail.com') {
-        adminMenu.style.display = 'block';
-        loadOnlineUsers();
-        setInterval(loadOnlineUsers, 10000); // Update users every 10 seconds
+    // Ensure all elements exist
+    if (!loginForm || !loginDiv || !shopDiv || !itemsDiv || !cartDiv || !orderBtn || !logoutBtn || !loadingDiv || !resultDiv) {
+        console.error('One or more DOM elements not found');
+        return;
     }
-    loadStock();
-});
 
-// Draggable admin menu
-adminMenu.addEventListener('mousedown', (e) => {
-    if (e.target.classList.contains('admin-header')) {
-        isDragging = true;
-        currentX = e.clientX - xOffset;
-        currentY = e.clientY - yOffset;
-    }
-});
-
-document.addEventListener('mousemove', (e) => {
-    if (isDragging) {
+    loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        xOffset = e.clientX - currentX;
-        yOffset = e.clientY - currentY;
-        adminMenu.style.left = `${xOffset}px`;
-        adminMenu.style.top = `${yOffset}px`;
-    }
-});
-
-document.addEventListener('mouseup', () => {
-    isDragging = false;
-});
-
-closeAdminBtn.addEventListener('click', () => {
-    adminMenu.style.display = 'none';
-});
-
-function loadStock() {
-    fetch(`${apiUrl}/stock`)
-        .then(res => res.json())
-        .then(items => {
-            stockItems = items;
-            itemsDiv.innerHTML = '';
-            items.forEach(item => {
-                const div = document.createElement('div');
-                div.innerHTML = `${item.name} - $${item.price} (Stock: ${item.stock}) <button onclick="addToCart(${item.id})">Add to Cart</button>`;
-                itemsDiv.appendChild(div);
-            });
-        })
-        .catch(err => console.error(err));
-}
-
-setInterval(loadStock, 10000);
-
-window.addToCart = function(id) {
-    const item = stockItems.find(i => i.id === id);
-    if (!item) return;
-    const existing = cart.find(c => c.id === id);
-    if (existing) {
-        existing.quantity++;
-    } else {
-        cart.push({ id, name: item.name, quantity: 1 });
-    }
-    updateCart();
-};
-
-function updateCart() {
-    cartDiv.innerHTML = '';
-    cart.forEach(c => {
-        const div = document.createElement('div');
-        div.textContent = `${c.name} x ${c.quantity}`;
-        cartDiv.appendChild(div);
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+        if (!nameInput || !emailInput) {
+            resultDiv.textContent = 'Error: Form inputs not found';
+            return;
+        }
+        const name = nameInput.value;
+        const email = emailInput.value;
+        window.currentUser = { name, email };
+        loginDiv.style.display = 'none';
+        shopDiv.style.display = 'block';
+        if (name === 'Administrator' && email === 'noreply.pharmaville@gmail.com' && adminMenu) {
+            adminMenu.style.display = 'block';
+            loadOnlineUsers();
+            setInterval(loadOnlineUsers, 10000); // Update users every 10 seconds
+        }
+        loadStock();
     });
-}
 
-orderBtn.addEventListener('click', () => {
-    if (cart.length === 0) {
-        resultDiv.textContent = 'Cart is empty!';
-        return;
-    }
-    loadingDiv.style.display = 'flex';
-    resultDiv.textContent = '';
-    const user = window.currentUser;
-    fetch(`${apiUrl}/order`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email, name: user.name, items: cart })
-    })
-        .then(res => res.json())
-        .then(result => {
-            loadingDiv.style.display = 'none';
-            if (result.success) {
-                resultDiv.textContent = `Order placed! Not in stock: ${result.not_in_stock.join(', ') || 'None'}`;
-                cart = [];
-                updateCart();
-                loadStock();
-            } else {
-                resultDiv.textContent = `Error: ${result.error}`;
+    // Draggable admin menu
+    if (adminMenu) {
+        adminMenu.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('admin-header')) {
+                isDragging = true;
+                currentX = e.clientX - xOffset;
+                currentY = e.clientY - yOffset;
             }
-        })
-        .catch(err => {
-            loadingDiv.style.display = 'none';
-            resultDiv.textContent = `Error: ${err.message}`;
         });
-});
 
-logoutBtn.addEventListener('click', () => {
-    window.currentUser = null;
-    cart = [];
-    updateCart();
-    resultDiv.textContent = '';
-    adminMenu.style.display = 'none';
-    loginDiv.style.display = 'block';
-    shopDiv.style.display = 'none';
-});
-
-stockForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const id = document.getElementById('itemId').value;
-    const name = document.getElementById('itemName').value;
-    const price = parseFloat(document.getElementById('itemPrice').value);
-    const stock = parseInt(document.getElementById('itemStock').value);
-    const item = { id: id ? parseInt(id) : null, name, price, stock };
-    
-    fetch(`${apiUrl}/update-stock`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(item)
-    })
-        .then(res => res.json())
-        .then(result => {
-            if (result.success) {
-                loadStock();
-                stockForm.reset();
-                resultDiv.textContent = 'Stock updated successfully!';
-            } else {
-                resultDiv.textContent = `Error: ${result.error}`;
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                e.preventDefault();
+                xOffset = e.clientX - currentX;
+                yOffset = e.clientY - currentY;
+                adminMenu.style.left = `${xOffset}px`;
+                adminMenu.style.top = `${yOffset}px`;
             }
-        })
-        .catch(err => {
-            resultDiv.textContent = `Error: ${err.message}`;
         });
-});
 
-deleteItemBtn.addEventListener('click', () => {
-    const id = document.getElementById('itemId').value;
-    if (!id) {
-        resultDiv.textContent = 'Please enter an Item ID to delete';
-        return;
-    }
-    fetch(`${apiUrl}/update-stock`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: parseInt(id) })
-    })
-        .then(res => res.json())
-        .then(result => {
-            if (result.success) {
-                loadStock();
-                stockForm.reset();
-                resultDiv.textContent = 'Item deleted successfully!';
-            } else {
-                resultDiv.textContent = `Error: ${result.error}`;
-            }
-        })
-        .catch(err => {
-            resultDiv.textContent = `Error: ${err.message}`;
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
         });
-});
 
-function loadOnlineUsers() {
-    fetch(`${apiUrl}/users`)
-        .then(res => res.json())
-        .then(users => {
-            onlineUsersDiv.innerHTML = '';
-            users.forEach(user => {
-                const div = document.createElement('div');
-                div.textContent = `${user.name} (${user.email})`;
-                onlineUsersDiv.appendChild(div);
+        if (closeAdminBtn) {
+            closeAdminBtn.addEventListener('click', () => {
+                adminMenu.style.display = 'none';
             });
+        }
+    }
+
+    function loadStock() {
+        fetch(`${apiUrl}/stock`)
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to fetch stock');
+                return res.json();
+            })
+            .then(items => {
+                stockItems = items;
+                itemsDiv.innerHTML = '';
+                items.forEach(item => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `${item.name} - $${item.price} (Stock: ${item.stock}) <button onclick="addToCart(${item.id})">Add to Cart</button>`;
+                    itemsDiv.appendChild(div);
+                });
+            })
+            .catch(err => {
+                console.error('Stock load error:', err);
+                resultDiv.textContent = 'Error loading stock';
+            });
+    }
+
+    setInterval(loadStock, 10000);
+
+    window.addToCart = function(id) {
+        const item = stockItems.find(i => i.id === id);
+        if (!item) {
+            resultDiv.textContent = 'Error: Item not found';
+            return;
+        }
+        const existing = cart.find(c => c.id === id);
+        if (existing) {
+            existing.quantity++;
+        } else {
+            cart.push({ id, name: item.name, quantity: 1 });
+        }
+        updateCart();
+    };
+
+    function updateCart() {
+        cartDiv.innerHTML = '';
+        cart.forEach(c => {
+            const div = document.createElement('div');
+            div.textContent = `${c.name} x ${c.quantity}`;
+            cartDiv.appendChild(div);
+        });
+    }
+
+    orderBtn.addEventListener('click', () => {
+        if (cart.length === 0) {
+            resultDiv.textContent = 'Cart is empty!';
+            return;
+        }
+        loadingDiv.style.display = 'flex';
+        resultDiv.textContent = '';
+        const user = window.currentUser;
+        fetch(`${apiUrl}/order`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: user.email, name: user.name, items: cart })
         })
-        .catch(err => console.error(err));
-}
+            .then(res => {
+                if (!res.ok) throw new Error('Order request failed');
+                return res.json();
+            })
+            .then(result => {
+                loadingDiv.style.display = 'none';
+                if (result.success) {
+                    resultDiv.textContent = `Order placed! Not in stock: ${result.not_in_stock.join(', ') || 'None'}`;
+                    cart = [];
+                    updateCart();
+                    loadStock();
+                } else {
+                    resultDiv.textContent = `Error: ${result.error}`;
+                }
+            })
+            .catch(err => {
+                loadingDiv.style.display = 'none';
+                resultDiv.textContent = `Error: ${err.message}`;
+            });
+    });
+
+    logoutBtn.addEventListener('click', () => {
+        window.currentUser = null;
+        cart = [];
+        updateCart();
+        resultDiv.textContent = '';
+        if (adminMenu) adminMenu.style.display = 'none';
+        loginDiv.style.display = 'block';
+        shopDiv.style.display = 'none';
+    });
+
+    if (stockForm && deleteItemBtn) {
+        stockForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('itemId').value;
+            const name = document.getElementById('itemName').value;
+            const price = parseFloat(document.getElementById('itemPrice').value);
+            const stock = parseInt(document.getElementById('itemStock').value);
+            const item = { id: id ? parseInt(id) : null, name, price, stock };
+
+            fetch(`${apiUrl}/update-stock`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item)
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error('Stock update failed');
+                    return res.json();
+                })
+                .then(result => {
+                    if (result.success) {
+                        loadStock();
+                        stockForm.reset();
+                        resultDiv.textContent = 'Stock updated successfully!';
+                    } else {
+                        resultDiv.textContent = `Error: ${result.error}`;
+                    }
+                })
+                .catch(err => {
+                    resultDiv.textContent = `Error: ${err.message}`;
+                });
+        });
+
+        deleteItemBtn.addEventListener('click', () => {
+            const id = document.getElementById('itemId').value;
+            if (!id) {
+                resultDiv.textContent = 'Please enter an Item ID to delete';
+                return;
+            }
+            fetch(`${apiUrl}/update-stock`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: parseInt(id) })
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error('Stock deletion failed');
+                    return res.json();
+                })
+                .then(result => {
+                    if (result.success) {
+                        loadStock();
+                        stockForm.reset();
+                        resultDiv.textContent = 'Item deleted successfully!';
+                    } else {
+                        resultDiv.textContent = `Error: ${result.error}`;
+                    }
+                })
+                .catch(err => {
+                    resultDiv.textContent = `Error: ${err.message}`;
+                });
+        });
+    }
+
+    function loadOnlineUsers() {
+        if (!onlineUsersDiv) return;
+        fetch(`${apiUrl}/users`)
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to fetch users');
+                return res.json();
+            })
+            .then(users => {
+                onlineUsersDiv.innerHTML = '';
+                users.forEach(user => {
+                    const div = document.createElement('div');
+                    div.textContent = `${user.name} (${user.email})`;
+                    onlineUsersDiv.appendChild(div);
+                });
+            })
+            .catch(err => {
+                console.error('Users load error:', err);
+                onlineUsersDiv.innerHTML = 'Error loading users';
+            });
+    }
+});
