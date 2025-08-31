@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartDiv = document.getElementById('cart');
     const orderBtn = document.getElementById('orderBtn');
     const logoutBtn = document.getElementById('logoutBtn');
+    const chatBtn = document.getElementById('chatBtn');
     const loadingDiv = document.getElementById('loading');
     const resultDiv = document.getElementById('result');
     const adminMenu = document.getElementById('adminMenu');
@@ -53,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Login attempt:', { name, email });
             if (name === 'Administrator' && email === 'noreply.pharmaville@gmail.com') {
                 if (adminMenu) {
+                    adminMenu.classList.add('animated');
                     adminMenu.style.display = 'block';
                     console.log('Admin menu displayed');
                     loadOnlineUsers();
@@ -66,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000); // Match animation duration
     });
 
-    // Draggable admin menu
+    // Draggable admin menu with animation
     if (adminMenu) {
         adminMenu.addEventListener('mousedown', (e) => {
             if (e.target.classList.contains('admin-header')) {
@@ -109,6 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 items.forEach(item => {
                     const div = document.createElement('div');
                     div.innerHTML = `${item.name} - $${item.price} (Stock: ${item.stock}) <button onclick="addToCart(${item.id})">Add to Cart</button>`;
+                    div.classList.add('animated');
                     itemsDiv.appendChild(div);
                 });
             })
@@ -140,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         cart.forEach(c => {
             const div = document.createElement('div');
             div.textContent = `${c.name} x ${c.quantity}`;
+            div.classList.add('animated');
             cartDiv.appendChild(div);
         });
     }
@@ -184,6 +188,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     logoutBtn.addEventListener('click', () => {
         location.reload(); // Refresh page for logout
+    });
+
+    chatBtn.addEventListener('click', () => {
+        if (adminMenu) {
+            adminMenu.style.display = 'block';
+        } else {
+            resultDiv.textContent = 'Error: Chat not available';
+        }
     });
 
     if (stockForm && deleteItemBtn) {
@@ -288,6 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     users.forEach(user => {
                         const div = document.createElement('div');
                         div.textContent = `${user.name} (${user.email})`;
+                        div.classList.add('animated');
                         onlineUsersDiv.appendChild(div);
                     });
                 }
