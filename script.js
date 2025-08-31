@@ -65,16 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loginDiv.style.display = 'none';
             shopDiv.style.display = 'block';
             shopDiv.classList.add('fade-in');
-            if (name === 'Administrator' && email === 'noreply.pharmaville@gmail.com') {
-                if (adminMenu) {
-                    adminMenu.classList.add('animated');
-                    adminMenu.style.display = 'block';
-                    console.log('Admin menu displayed');
-                } else {
-                    console.error('Admin menu element not found');
-                    resultDiv.textContent = 'Error: Admin menu not found';
-                }
-            }
+            // Admin menu only opens via keybinds, not here
             loadStock();
         }, 1000); // Match animation duration
     });
@@ -262,11 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (chatBtn) {
         chatBtn.addEventListener('click', () => {
-            if (adminMenu) {
-                adminMenu.style.display = 'block';
-            } else {
-                resultDiv.textContent = 'Error: Chat not available';
-            }
+            resultDiv.textContent = 'No representatives available at this time';
         });
     }
 
@@ -335,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ id: parseInt(id) })
             })
                 .then(res => {
-                    if (!res.ok) throw new Error(`HTML ${res.status}: Stock deletion failed`);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}: Stock deletion failed`);
                     return res.json();
                 })
                 .then(result => {
