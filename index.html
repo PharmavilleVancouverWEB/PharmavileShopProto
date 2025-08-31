@@ -12,8 +12,7 @@
             <h2>Welcome</h2>
             <input type="text" id="name" placeholder="Your Name" required>
             <input type="email" id="email" placeholder="Your Email" required>
-            <button type="submit" class="btn btn-primary">Enter</button>
-            <h2>No data will be saved to anywhere, your privacy matters.<h2>
+            <button type="submit" class="btn btn-primary">Enter Shop</button>
         </form>
     </div>
     <div id="shop" class="shop-container" style="display: none;">
@@ -31,6 +30,24 @@
                     <img src="https://cdn.dribbble.com/userupload/19445350/file/original-d3c1a1167b18464e2eff6622d09f2dc8.gif" alt="Loading...">
                 </div>
                 <div id="result" class="result"></div>
+            </div>
+        </div>
+        <div id="adminMenu" class="admin-menu" style="display: none;">
+            <div class="admin-header">Admin Menu <button id="closeAdminBtn" class="btn btn-close">X</button></div>
+            <div class="admin-section">
+                <h3>Manage Stock</h3>
+                <form id="stockForm">
+                    <input type="number" id="itemId" placeholder="Item ID (leave blank for new)">
+                    <input type="text" id="itemName" placeholder="Item Name" required>
+                    <input type="number" id="itemPrice" placeholder="Price" step="0.01" required>
+                    <input type="number" id="itemStock" placeholder="Stock" required>
+                    <button type="submit" class="btn btn-primary">Update/Add Item</button>
+                    <button type="button" id="deleteItemBtn" class="btn btn-danger">Delete Item</button>
+                </form>
+            </div>
+            <div class="admin-section">
+                <h3>Online Users</h3>
+                <div id="onlineUsers" class="online-users"></div>
             </div>
         </div>
     </div>
