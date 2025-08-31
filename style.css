@@ -136,6 +136,28 @@ body {
     background-color: #e0a800;
 }
 
+.btn-add-to-cart {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    background-color: #34c759;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    animation: fadeIn 0.5s ease;
+}
+
+.btn-add-to-cart:hover {
+    background-color: #2ca44e;
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-add-to-cart:active {
+    transform: scale(0.95);
+}
+
 .shop-container {
     max-width: 1000px;
     margin: 0 auto;
@@ -177,37 +199,15 @@ body {
     justify-content: space-between;
     align-items: center;
     font-size: 0.9rem;
-    animation: fadeIn 0.5s ease;
-    opacity: 0;
 }
 
 .items-list div:last-child, .cart-list div:last-child {
     border-bottom: none;
 }
 
-.items-list button {
-    padding: 6px 12px;
-    font-size: 0.8rem;
-    background-color: #34c759;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.items-list button:hover {
-    background-color: #2ca44e;
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.items-list button:active {
-    transform: scale(0.95);
-}
-
 .cart-list div {
     color: #555;
+    animation: fadeIn 0.5s ease;
 }
 
 .loading-overlay {
@@ -251,7 +251,7 @@ body {
     left: 100px;
     width: 500px; /* Bigger admin panel */
     background: white;
-    border-radius: 12px; /* Refined style with larger radius */
+    border-radius: 12px; /* Refined style */
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
     z-index: 2000;
     cursor: move;
@@ -261,7 +261,7 @@ body {
 .admin-header {
     background: #1a73e8;
     color: white;
-    padding: 15px; /* Refined padding */
+    padding: 15px;
     border-radius: 12px 12px 0 0;
     display: flex;
     justify-content: space-between;
@@ -271,7 +271,7 @@ body {
 }
 
 .admin-section {
-    padding: 20px; /* Increased padding for bigger panel */
+    padding: 20px;
     animation: slideIn 0.5s ease 0.2s forwards;
     opacity: 0;
 }
@@ -286,7 +286,7 @@ body {
     padding: 10px;
     margin: 8px 0;
     border: 1px solid #ddd;
-    border-radius: 6px; /* Refined style */
+    border-radius: 6px;
     font-size: 0.9rem;
     transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
@@ -306,7 +306,6 @@ body {
     border-bottom: 1px solid #eee;
     font-size: 0.9rem;
     animation: fadeIn 0.5s ease;
-    opacity: 0;
 }
 
 .online-users div:last-child {
