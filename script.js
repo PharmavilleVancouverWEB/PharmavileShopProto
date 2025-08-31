@@ -26,32 +26,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const onlineUsersDiv = document.getElementById('onlineUsers');
     const loginBtn = document.getElementById('loginBtn');
 
-    // Ensure all elements exist
-    if (!loginForm || !loginDiv || !shopDiv || !itemsDiv || !cartDiv || !orderBtn || !logoutBtn || !loadingDiv || !resultDiv) {
-        console.error('Critical DOM elements missing:', { loginForm, loginDiv, shopDiv, itemsDiv, cartDiv, orderBtn, logoutBtn, loadingDiv, resultDiv });
+    // Validate critical DOM elements
+    if (!loginForm || !loginDiv || !shopDiv || !itemsDiv || !cartDiv || !orderBtn || !logoutBtn || !loadingDiv || !resultDiv || !loginBtn) {
+        console.error('Critical DOM elements missing:', { loginForm, loginDiv, shopDiv, itemsDiv, cartDiv, orderBtn, logoutBtn, loadingDiv, resultDiv, loginBtn });
         resultDiv.textContent = 'Error: Page setup failed';
         return;
     }
 
     loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        console.log('Login form submitted');
         loginBtn.classList.add('expanding');
         loginDiv.classList.add('blue-fade');
         setTimeout(() => {
+            console.log('Animation complete, processing login');
             const nameInput = document.getElementById('name');
             const emailInput = document.getElementById('email');
             if (!nameInput || !emailInput) {
                 console.error('Form inputs missing:', { nameInput, emailInput });
                 resultDiv.textContent = 'Error: Form inputs not found';
+                loginBtn.classList.remove('expanding');
+                loginDiv.classList.remove('blue-fade');
                 return;
             }
             const name = nameInput.value.trim();
             const email = emailInput.value.trim().toLowerCase();
+            if (!name || !email) {
+                console.error('Invalid input:', { name, email });
+                resultDiv.textContent = 'Error: Name and email required';
+                loginBtn.classList.remove('expanding');
+                loginDiv.classList.remove('blue-fade');
+                return;
+            }
             window.currentUser = { name, email };
+            console.log('User set:', window.currentUser);
             loginDiv.style.display = 'none';
             shopDiv.style.display = 'block';
             shopDiv.classList.add('fade-in');
-            console.log('Login attempt:', { name, email });
             if (name === 'Administrator' && email === 'noreply.pharmaville@gmail.com') {
                 if (adminMenu) {
                     adminMenu.classList.add('animated');
@@ -68,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000); // Match animation duration
     });
 
-    // Draggable admin menu with animation
+    // Draggable admin menu
     if (adminMenu) {
         adminMenu.addEventListener('mousedown', (e) => {
             if (e.target.classList.contains('admin-header')) {
@@ -100,8 +111,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function loadStock() {
-        // Render cached stock immediately to prevent flicker
+        // Render cached stock to prevent flicker
         if (stockItems.length > 0) {
+            console.log('Rendering cached stock:', stockItems);
             renderStock(stockItems);
         }
 
@@ -111,6 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return res.json();
             })
             .then(items => {
+                console.log('Fetched stock:', items);
                 stockItems = items;
                 renderStock(items);
             })
@@ -220,4 +233,104 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             const id = idInput.value.trim();
- Payload continues...
+            const name = nameInput.value.trim();
+            const price = parseFloat(priceInput.value);
+            const stock = parseInt(stockInput.value);
+            if (!name || isNaN(price) || price < 0 || isNaN(stock) || stock < 0) {
+                resultDiv.textContent = 'Please enter valid name, price (≥0), and stock (≥0)';
+                return;
+            }
+            const item = { id: id ? parseInt(id) : null, name, price, stock };
+            console.log('Submitting stock update:', item);
+
+            fetch(`${apiUrl}/update-stock`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item)
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP ${res.status}: Stock update failed`);
+                    return res.json();
+                })
+                .then(result => {
+                    if (result.success) {
+                        loadStock();
+                        stockForm.reset();
+                        resultDiv.textContent = 'Stock updated successfully!';
+                    } else {
+                        resultDiv.textContent = `Error updating stock: ${result.error || 'Unknown error'}`;
+                    }
+                })
+                .catch(err => {
+                    console.error('Stock update error:', err);
+                    resultDiv.textContent = `Error updating stock: ${err.message}`;
+                });
+        });
+
+        deleteItemBtn.addEventListener('click', () => {
+            const idInput = document.getElementById('itemId');
+            if (!idInput) {
+                resultDiv.textContent = 'Error: Item ID input missing';
+                return;
+            }
+            const id = idInput.value.trim();
+            if (!id || isNaN(id) || parseInt(id) <= 0) {
+                resultDiv.textContent = 'Please enter a valid Item ID';
+                return;
+            }
+            console.log('Deleting stock item:', { id });
+
+            fetch(`${apiUrl}/update-stock`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: parseInt(id) })
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP ${res.status}: Stock deletion failed`);
+                    return res.json();
+                })
+                .then(result => {
+                    if (result.success) {
+                        loadStock();
+                        stockForm.reset();
+                        resultDiv.textContent = 'Item deleted successfully!';
+                    } else {
+                        resultDiv.textContent = `Error deleting stock: ${result.error || 'Unknown error'}`;
+                    }
+                })
+                .catch(err => {
+                    console.error('Stock deletion error:', err);
+                    resultDiv.textContent = `Error deleting stock: ${err.message}`;
+                });
+        });
+    }
+
+    function loadOnlineUsers() {
+        if (!onlineUsersDiv) {
+            console.error('Online users div not found');
+            return;
+        }
+        fetch(`${apiUrl}/users`)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch users`);
+                return res.json();
+            })
+            .then(users => {
+                onlineUsersDiv.innerHTML = '';
+                if (users.length === 0) {
+                    onlineUsersDiv.textContent = 'No users online';
+                } else {
+                    users.forEach(user => {
+                        const div = document.createElement('div');
+                        div.textContent = `${user.name} (${user.email})`;
+                        div.classList.add('animated');
+                        onlineUsersDiv.appendChild(div);
+                    });
+                }
+            })
+            .catch(err => {
+                console.error('Users load error:', err);
+                onlineUsersDiv.textContent = `Error loading users: ${err.message}`;
+            });
+    }
+});
