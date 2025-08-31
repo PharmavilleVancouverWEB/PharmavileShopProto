@@ -1,14 +1,14 @@
 [
   {
     "id": 1,
-    "name": "Item1",
+    "name": "Some teva pills",
     "price": 10,
-    "stock": 5
+    "stock": 1009
   },
   {
     "id": 2,
-    "name": "Item2",
+    "name": "some teva pill",
     "price": 20,
-    "stock": 3
+    "stock": 1
   }
 ]
