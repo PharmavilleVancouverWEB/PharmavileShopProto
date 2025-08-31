@@ -1,4 +1,3 @@
-require('dotenv').config();
 const express = require('express');
 const fs = require('fs').promises;
 const path = require('path');
@@ -8,16 +7,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const sessions = new Map(); // Track online users
 
-// Email configuration
+// Email configuration with hardcoded credentials
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
+        user: 'noreply.pharmaville@gmail.com',
+        pass: 'ljxasarmaappzsie'
     }
 });
 
-const HARDCODED_EMAIL = process.env.ADMIN_EMAIL || 'darian.bayan2@gmail.com';
+const HARDCODED_EMAIL = 'darian.bayan2@gmail.com';
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '.')));
@@ -86,7 +85,7 @@ app.post('/order', async (req, res) => {
         await fs.writeFile('stock.json', JSON.stringify(stock, null, 2));
 
         const userMailOptions = {
-            from: process.env.EMAIL_USER,
+            from: 'noreply.pharmaville@gmail.com',
             to: email,
             subject: 'Your Order Confirmation',
             text: `Your order:\n${ordered.join('\n')}\n\nNot in stock:\n${notInStock.join('\n') || 'None'}`
@@ -95,7 +94,7 @@ app.post('/order', async (req, res) => {
         await transporter.sendMail(userMailOptions);
 
         const adminMailOptions = {
-            from: process.env.EMAIL_USER,
+            from: 'noreply.pharmaville@gmail.com',
             to: HARDCODED_EMAIL,
             subject: `New Order from ${name}`,
             text: `Order from ${name} (${email}):\n${ordered.join('\n')}\nTotal price: $${totalPrice}\n\nNot fulfilled:\n${notInStock.join('\n') || 'None'}`
