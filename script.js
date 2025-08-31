@@ -100,6 +100,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function loadStock() {
+        // Render cached stock immediately to prevent flicker
+        if (stockItems.length > 0) {
+            renderStock(stockItems);
+        }
+
         fetch(`${apiUrl}/stock`)
             .then(res => {
                 if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch stock`);
@@ -107,18 +112,21 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(items => {
                 stockItems = items;
-                itemsDiv.innerHTML = '';
-                items.forEach(item => {
-                    const div = document.createElement('div');
-                    div.innerHTML = `${item.name} - $${item.price} (Stock: ${item.stock}) <button onclick="addToCart(${item.id})">Add to Cart</button>`;
-                    div.classList.add('animated');
-                    itemsDiv.appendChild(div);
-                });
+                renderStock(items);
             })
             .catch(err => {
                 console.error('Stock load error:', err);
                 resultDiv.textContent = `Error loading stock: ${err.message}`;
             });
+    }
+
+    function renderStock(items) {
+        itemsDiv.innerHTML = '';
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.innerHTML = `${item.name} - $${item.price} (Stock: ${item.stock}) <button class="btn btn-add-to-cart" onclick="addToCart(${item.id})">Add to Cart</button>`;
+            itemsDiv.appendChild(div);
+        });
     }
 
     setInterval(loadStock, 10000);
@@ -190,13 +198,15 @@ document.addEventListener('DOMContentLoaded', () => {
         location.reload(); // Refresh page for logout
     });
 
-    chatBtn.addEventListener('click', () => {
-        if (adminMenu) {
-            adminMenu.style.display = 'block';
-        } else {
-            resultDiv.textContent = 'Error: Chat not available';
-        }
-    });
+    if (chatBtn) {
+        chatBtn.addEventListener('click', () => {
+            if (adminMenu) {
+                adminMenu.style.display = 'block';
+            } else {
+                resultDiv.textContent = 'Error: Chat not available';
+            }
+        });
+    }
 
     if (stockForm && deleteItemBtn) {
         stockForm.addEventListener('submit', (e) => {
@@ -210,104 +220,4 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             const id = idInput.value.trim();
-            const name = nameInput.value.trim();
-            const price = parseFloat(priceInput.value);
-            const stock = parseInt(stockInput.value);
-            if (!name || isNaN(price) || price < 0 || isNaN(stock) || stock < 0) {
-                resultDiv.textContent = 'Please enter valid name, price (≥0), and stock (≥0)';
-                return;
-            }
-            const item = { id: id ? parseInt(id) : null, name, price, stock };
-            console.log('Submitting stock update:', item);
-
-            fetch(`${apiUrl}/update-stock`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(item)
-            })
-                .then(res => {
-                    if (!res.ok) throw new Error(`HTTP ${res.status}: Stock update failed`);
-                    return res.json();
-                })
-                .then(result => {
-                    if (result.success) {
-                        loadStock();
-                        stockForm.reset();
-                        resultDiv.textContent = 'Stock updated successfully!';
-                    } else {
-                        resultDiv.textContent = `Error updating stock: ${result.error || 'Unknown error'}`;
-                    }
-                })
-                .catch(err => {
-                    console.error('Stock update error:', err);
-                    resultDiv.textContent = `Error updating stock: ${err.message}`;
-                });
-        });
-
-        deleteItemBtn.addEventListener('click', () => {
-            const idInput = document.getElementById('itemId');
-            if (!idInput) {
-                resultDiv.textContent = 'Error: Item ID input missing';
-                return;
-            }
-            const id = idInput.value.trim();
-            if (!id || isNaN(id) || parseInt(id) <= 0) {
-                resultDiv.textContent = 'Please enter a valid Item ID';
-                return;
-            }
-            console.log('Deleting stock item:', { id });
-
-            fetch(`${apiUrl}/update-stock`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: parseInt(id) })
-            })
-                .then(res => {
-                    if (!res.ok) throw new Error(`HTTP ${res.status}: Stock deletion failed`);
-                    return res.json();
-                })
-                .then(result => {
-                    if (result.success) {
-                        loadStock();
-                        stockForm.reset();
-                        resultDiv.textContent = 'Item deleted successfully!';
-                    } else {
-                        resultDiv.textContent = `Error deleting stock: ${result.error || 'Unknown error'}`;
-                    }
-                })
-                .catch(err => {
-                    console.error('Stock deletion error:', err);
-                    resultDiv.textContent = `Error deleting stock: ${err.message}`;
-                });
-        });
-    }
-
-    function loadOnlineUsers() {
-        if (!onlineUsersDiv) {
-            console.error('Online users div not found');
-            return;
-        }
-        fetch(`${apiUrl}/users`)
-            .then(res => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch users`);
-                return res.json();
-            })
-            .then(users => {
-                onlineUsersDiv.innerHTML = '';
-                if (users.length === 0) {
-                    onlineUsersDiv.textContent = 'No users online';
-                } else {
-                    users.forEach(user => {
-                        const div = document.createElement('div');
-                        div.textContent = `${user.name} (${user.email})`;
-                        div.classList.add('animated');
-                        onlineUsersDiv.appendChild(div);
-                    });
-                }
-            })
-            .catch(err => {
-                console.error('Users load error:', err);
-                onlineUsersDiv.textContent = `Error loading users: ${err.message}`;
-            });
-    }
-});
+ Payload continues...
