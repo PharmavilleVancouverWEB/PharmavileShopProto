@@ -301,14 +301,45 @@ body {
     margin-top: 12px;
 }
 
-.online-users div {
+.console-menu {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 6px;
+    max-height: 200px;
+    overflow: hidden;
+}
+
+#consoleInput {
+    width: 100%;
     padding: 8px;
-    border-bottom: 1px solid #eee;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
     font-size: 0.9rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+#consoleInput:focus {
+    border-color: #1a73e8;
+    animation: typing-glow 1s infinite alternate;
+    transform: scale(1.02);
+}
+
+.console-output {
+    max-height: 150px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #333;
+}
+
+.console-line {
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
     animation: fadeIn 0.5s ease;
 }
 
-.online-users div:last-child {
+.console-line:last-child {
     border-bottom: none;
 }
 
