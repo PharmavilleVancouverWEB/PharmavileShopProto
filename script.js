@@ -26,7 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Ensure all elements exist
     if (!loginForm || !loginDiv || !shopDiv || !itemsDiv || !cartDiv || !orderBtn || !logoutBtn || !loadingDiv || !resultDiv) {
-        console.error('One or more DOM elements not found');
+        console.error('Critical DOM elements missing:', { loginForm, loginDiv, shopDiv, itemsDiv, cartDiv, orderBtn, logoutBtn, loadingDiv, resultDiv });
+        resultDiv.textContent = 'Error: Page setup failed';
         return;
     }
 
@@ -35,18 +36,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const nameInput = document.getElementById('name');
         const emailInput = document.getElementById('email');
         if (!nameInput || !emailInput) {
+            console.error('Form inputs missing:', { nameInput, emailInput });
             resultDiv.textContent = 'Error: Form inputs not found';
             return;
         }
-        const name = nameInput.value;
-        const email = emailInput.value;
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim().toLowerCase();
         window.currentUser = { name, email };
         loginDiv.style.display = 'none';
         shopDiv.style.display = 'block';
-        if (name === 'Administrator' && email === 'noreply.pharmaville@gmail.com' && adminMenu) {
-            adminMenu.style.display = 'block';
-            loadOnlineUsers();
-            setInterval(loadOnlineUsers, 10000); // Update users every 10 seconds
+        console.log('Login attempt:', { name, email });
+        if (name === 'Administrator' && email === 'noreply.pharmaville@gmail.com') {
+            if (adminMenu) {
+                adminMenu.style.display = 'block';
+                console.log('Admin menu displayed');
+                loadOnlineUsers();
+                setInterval(loadOnlineUsers, 10000); // Update users every 10 seconds
+            } else {
+                console.error('Admin menu element not found');
+                resultDiv.textContent = 'Error: Admin menu not found';
+            }
         }
         loadStock();
     });
@@ -154,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateCart();
                     loadStock();
                 } else {
-                    resultDiv.textContent = `Error: ${result.error}`;
+                    resultDiv.textContent = `Error placing order: ${result.error || 'Unknown error'}`;
                 }
             })
             .catch(err => {
@@ -176,15 +185,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (stockForm && deleteItemBtn) {
         stockForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const id = document.getElementById('itemId').value;
-            const name = document.getElementById('itemName').value;
-            const price = parseFloat(document.getElementById('itemPrice').value);
-            const stock = parseInt(document.getElementById('itemStock').value);
-            if (!name || isNaN(price) || isNaN(stock)) {
-                resultDiv.textContent = 'Please fill all fields with valid data';
+            const idInput = document.getElementById('itemId');
+            const nameInput = document.getElementById('itemName');
+            const priceInput = document.getElementById('itemPrice');
+            const stockInput = document.getElementById('itemStock');
+            if (!nameInput || !priceInput || !stockInput) {
+                resultDiv.textContent = 'Error: Form inputs missing';
+                return;
+            }
+            const id = idInput.value.trim();
+            const name = nameInput.value.trim();
+            const price = parseFloat(priceInput.value);
+            const stock = parseInt(stockInput.value);
+            if (!name || isNaN(price) || price < 0 || isNaN(stock) || stock < 0) {
+                resultDiv.textContent = 'Please enter valid name, price (≥0), and stock (≥0)';
                 return;
             }
             const item = { id: id ? parseInt(id) : null, name, price, stock };
+            console.log('Submitting stock update:', item);
 
             fetch(`${apiUrl}/update-stock`, {
                 method: 'POST',
@@ -201,20 +219,28 @@ document.addEventListener('DOMContentLoaded', () => {
                         stockForm.reset();
                         resultDiv.textContent = 'Stock updated successfully!';
                     } else {
-                        resultDiv.textContent = `Error updating stock: ${result.error}`;
+                        resultDiv.textContent = `Error updating stock: ${result.error || 'Unknown error'}`;
                     }
                 })
                 .catch(err => {
+                    console.error('Stock update error:', err);
                     resultDiv.textContent = `Error updating stock: ${err.message}`;
                 });
         });
 
         deleteItemBtn.addEventListener('click', () => {
-            const id = document.getElementById('itemId').value;
-            if (!id) {
-                resultDiv.textContent = 'Please enter an Item ID to delete';
+            const idInput = document.getElementById('itemId');
+            if (!idInput) {
+                resultDiv.textContent = 'Error: Item ID input missing';
                 return;
             }
+            const id = idInput.value.trim();
+            if (!id || isNaN(id) || parseInt(id) <= 0) {
+                resultDiv.textContent = 'Please enter a valid Item ID';
+                return;
+            }
+            console.log('Deleting stock item:', { id });
+
             fetch(`${apiUrl}/update-stock`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
@@ -230,17 +256,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         stockForm.reset();
                         resultDiv.textContent = 'Item deleted successfully!';
                     } else {
-                        resultDiv.textContent = `Error deleting stock: ${result.error}`;
+                        resultDiv.textContent = `Error deleting stock: ${result.error || 'Unknown error'}`;
                     }
                 })
                 .catch(err => {
+                    console.error('Stock deletion error:', err);
                     resultDiv.textContent = `Error deleting stock: ${err.message}`;
                 });
         });
     }
 
     function loadOnlineUsers() {
-        if (!onlineUsersDiv) return;
+        if (!onlineUsersDiv) {
+            console.error('Online users div not found');
+            return;
+        }
         fetch(`${apiUrl}/users`)
             .then(res => {
                 if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch users`);
