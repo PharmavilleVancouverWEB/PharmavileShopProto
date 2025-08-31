@@ -1,4 +1,7 @@
-[
-    { "id": 1, "name": "IDEAL PROTIEN Golden Pancakes", "price": 10, "stock": 9 },
-        { "id": 2, "name": "IDEAL PROTIEN Peanut Butter", "price": 9.98, "stock": 4 }
-]
+{
+    "items": [
+        { "id": 1, "name": "Item1", "price": 10, "stock": 5 },
+        { "id": 2, "name": "Item2", "price": 20, "stock": 3 }
+    ],
+    "bannedEmails": []
+}
