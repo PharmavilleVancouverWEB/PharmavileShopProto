@@ -1,6 +1,6 @@
 {
-  "name": "shop",
-  "version": "1.0.0",
+  "name": "Pharmaville",
+  "version": "1.6.7",
   "scripts": {
     "start": "node node_server.js"
   },
