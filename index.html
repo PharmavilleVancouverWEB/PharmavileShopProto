@@ -46,12 +46,12 @@
                     <button type="button" id="deleteItemBtn" class="btn btn-danger">Delete Item</button>
                 </form>
             </div>
-            <div class="admin-section">
-                <h3>Admin Console</h3>
-                <div id="consoleMenu" class="console-menu" style="display: none;">
-                    <input type="text" id="consoleInput" placeholder="Enter command (type 'help' for commands)">
-                    <div id="consoleOutput" class="console-output"></div>
-                </div>
+        </div>
+        <div id="consoleMenu" class="console-menu" style="display: none;">
+            <div class="admin-header">Admin Console <button id="closeConsoleBtn" class="btn btn-close">X</button></div>
+            <div class="console-section">
+                <input type="text" id="consoleInput" placeholder="Enter command (e.g., p/alertall('message'))">
+                <div id="consoleOutput" class="console-output"></div>
             </div>
         </div>
     </div>
