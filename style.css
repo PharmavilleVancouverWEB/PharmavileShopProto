@@ -50,12 +50,8 @@ body {
 }
 
 @keyframes typing-glow {
-    0% {
-        box-shadow: 0 0 5px rgba(26, 115, 232, 0.5);
-    }
-    100% {
-        box-shadow: 0 0 10px rgba(26, 115, 232, 0.8);
-    }
+    0% { box-shadow: 0 0 5px rgba(26, 115, 232, 0.5); }
+    100% { box-shadow: 0 0 10px rgba(26, 115, 232, 0.8); }
 }
 
 .btn {
@@ -68,24 +64,18 @@ body {
 }
 
 .btn:hover {
-    transform: translateY(-2px);
+    transform: scale(1.05);
 }
 
 .btn:active {
-    transform: translateY(1px);
+    transform: scale(0.95);
     animation: button-press 0.3s ease;
 }
 
 @keyframes button-press {
-    0% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(2px);
-    }
-    100% {
-        transform: translateY(0);
-    }
+    0% { transform: scale(1); }
+    50% { transform: scale(0.95); }
+    100% { transform: scale(1); }
 }
 
 .btn-primary {
@@ -181,11 +171,11 @@ body {
 
 .items-list button:hover {
     background-color: #2ca44e;
-    transform: translateY(-2px);
+    transform: scale(1.05);
 }
 
 .items-list button:active {
-    transform: translateY(1px);
+    transform: scale(0.95);
 }
 
 .cart-list div {
@@ -206,7 +196,7 @@ body {
 }
 
 .loading-overlay img {
-    width: 120px;
+    width: 240px; /* 2x larger than original 120px */
     height: auto;
 }
 
@@ -233,85 +223,4 @@ body {
     background: #1a73e8;
     color: white;
     padding: 10px;
-    border-radius: 8px 8px 0 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.admin-section {
-    padding: 15px;
-}
-
-.admin-section h3 {
-    margin-bottom: 10px;
-    font-size: 1.1rem;
-}
-
-#stockForm input {
-    width: 100%;
-    padding: 8px;
-    margin: 5px 0;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 0.9rem;
-}
-
-#stockForm button {
-    margin-top: 10px;
-}
-
-.online-users div {
-    padding: 5px;
-    border-bottom: 1px solid #eee;
-    font-size: 0.9rem;
-}
-
-.online-users div:last-child {
-    border-bottom: none;
-}
-
-@media (max-width: 768px) {
-    .shop-grid {
-        grid-template-columns: 1fr;
-    }
-    .cart-section {
-        margin-top: 20px;
-    }
-    .admin-menu {
-        width: 90%;
-        left: 5%;
-    }
-}
-
-#loginBtn.expanding {
-    animation: expand-blue 1s forwards;
-}
-
-@keyframes expand-blue {
-    0% {
-        transform: scale(1);
-        background-color: #1a73e8;
-    }
-    50% {
-        transform: scale(1.2);
-        background-color: #1557b0;
-    }
-    100% {
-        transform: scale(100);
-        background-color: #1a73e8;
-        border-radius: 0;
-        width: 100vw;
-        height: 100vh;
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 9999;
-    }
-}
-
-.blue-fade {
-    background-color: #1a73e8;
-    transition: opacity 0.5s ease;
-    opacity: 0;
-}
+    border
