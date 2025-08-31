@@ -1,14 +1,4 @@
 [
-  {
-    "id": 1,
-    "name": "Hydrocortisone Cream",
-    "price": 7.99,
-    "stock": 12
-  },
-  {
-    "id": 2,
-    "name": "Crutches",
-    "price": 20,
-    "stock": 8
-  }
+    { "id": 1, "Band-Aid": "Item1", "price": 7.93, "stock": 5 },
+    { "id": 2, "Hydrocortisone": "Item2", "price": 12.33, "stock": 3 }
 ]
