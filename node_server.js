@@ -2,6 +2,7 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
+const schedule = require('node-schedule');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -17,22 +18,44 @@ const transporter = nodemailer.createTransport({
 });
 
 let stock = [];
+let bannedEmails = [];
 const stockFile = path.join(__dirname, 'stock.json');
+let sessions = new Map(); // email -> { lastActive: timestamp }
+let carts = new Map(); // email -> cart array
+let isShutdown = false;
+let shutdownEndTime = null;
 
 if (fs.existsSync(stockFile)) {
-    stock = JSON.parse(fs.readFileSync(stockFile));
+    const data = JSON.parse(fs.readFileSync(stockFile));
+    stock = data.items || [];
+    bannedEmails = data.bannedEmails || [];
 }
 
 app.get('/stock', (req, res) => {
+    if (isShutdown) {
+        return res.status(503).json({ success: false, error: 'Site is temporarily down' });
+    }
     res.json(stock);
 });
 
+app.post('/check-ban', (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).json({ success: false, error: 'Email required' });
+    }
+    res.json({ banned: bannedEmails.includes(email.toLowerCase()) });
+});
+
 app.post('/order', (req, res) => {
+    if (isShutdown) {
+        return res.status(503).json({ success: false, error: 'Site is temporarily down' });
+    }
     const { email, name, items } = req.body;
     if (!email || !name || !items || !Array.isArray(items)) {
         return res.status(400).json({ success: false, error: 'Invalid request data' });
     }
-
+    sessions.set(email, { lastActive: Date.now() });
+    carts.set(email, items);
     let not_in_stock = [];
     let orderSummary = '';
 
@@ -46,7 +69,8 @@ app.post('/order', (req, res) => {
         }
     });
 
-    fs.writeFileSync(stockFile, JSON.stringify(stock, null, 2));
+    fs.writeFileSync(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
+    carts.set(email, []); // Clear cart after order
 
     const mailOptions = {
         from: 'noreply.pharmaville@gmail.com',
@@ -65,6 +89,9 @@ app.post('/order', (req, res) => {
 });
 
 app.post('/update-stock', (req, res) => {
+    if (isShutdown) {
+        return res.status(503).json({ success: false, error: 'Site is temporarily down' });
+    }
     const { id, name, price, stock: stockQty } = req.body;
     if (!name || typeof price !== 'number' || price < 0 || typeof stockQty !== 'number' || stockQty < 0) {
         return res.status(400).json({ success: false, error: 'Invalid stock data' });
@@ -84,11 +111,14 @@ app.post('/update-stock', (req, res) => {
         stock.push({ id: newId, name, price, stock: stockQty });
     }
 
-    fs.writeFileSync(stockFile, JSON.stringify(stock, null, 2));
+    fs.writeFileSync(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
     res.json({ success: true });
 });
 
 app.delete('/update-stock', (req, res) => {
+    if (isShutdown) {
+        return res.status(503).json({ success: false, error: 'Site is temporarily down' });
+    }
     const { id } = req.body;
     if (!id || typeof id !== 'number') {
         return res.status(400).json({ success: false, error: 'Invalid item ID' });
@@ -100,7 +130,70 @@ app.delete('/update-stock', (req, res) => {
     }
 
     stock.splice(index, 1);
-    fs.writeFileSync(stockFile, JSON.stringify(stock, null, 2));
+    fs.writeFileSync(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
+    res.json({ success: true });
+});
+
+app.post('/end-sessions', (req, res) => {
+    sessions.clear();
+    res.json({ success: true });
+});
+
+app.post('/alert-all', (req, res) => {
+    const { message } = req.body;
+    if (!message) {
+        return res.status(400).json({ success: false, error: 'Message required' });
+    }
+    // In a real app, broadcast to all clients (e.g., via WebSocket)
+    // Here, we store the message for clients to poll
+    res.json({ success: true, message });
+});
+
+app.post('/clear-carts', (req, res) => {
+    carts.clear();
+    res.json({ success: true });
+});
+
+app.post('/end-sessions-20m', (req, res) => {
+    const now = Date.now();
+    const twentyMinutes = 20 * 60 * 1000;
+    let ended = 0;
+    for (const [email, session] of sessions) {
+        if (now - session.lastActive >= twentyMinutes) {
+            sessions.delete(email);
+            carts.delete(email);
+            ended++;
+        }
+    }
+    res.json({ success: true, ended });
+});
+
+app.post('/shutdown-site', (req, res) => {
+    const { seconds } = req.body;
+    if (!seconds || typeof seconds !== 'number' || seconds <= 0) {
+        return res.status(400).json({ success: false, error: 'Invalid seconds' });
+    }
+    isShutdown = true;
+    shutdownEndTime = Date.now() + seconds * 1000;
+    schedule.scheduleJob(new Date(shutdownEndTime), () => {
+        isShutdown = false;
+        shutdownEndTime = null;
+    });
+    res.json({ success: true });
+});
+
+app.post('/ban-email', (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).json({ success: false, error: 'Email required' });
+    }
+    const normalizedEmail = email.toLowerCase();
+    if (!bannedEmails.includes(normalizedEmail)) {
+        bannedEmails.push(normalizedEmail);
+        sessions.delete(normalizedEmail);
+        carts.delete(normalizedEmail);
+        fs.writeFileSync(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
+    }
     res.json({ success: true });
 });
 
