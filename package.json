@@ -1,12 +1,13 @@
 {
   "name": "pharmaville-shop",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "scripts": {
     "start": "node node_server.js"
   },
   "dependencies": {
     "express": "^4.17.1",
-    "nodemailer": "^6.9.1"
+    "nodemailer": "^6.9.1",
+    "dotenv": "^16.0.0"
   },
   "license": "MIT"
 }
