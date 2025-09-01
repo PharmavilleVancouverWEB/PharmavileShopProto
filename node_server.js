@@ -19,9 +19,10 @@ const transporter = nodemailer.createTransport({
 
 let stock = [];
 let bannedEmails = [];
-const stockFile = path.join(__dirname, 'stock.json');
 let sessions = new Map();
 let carts = new Map();
+const stockFile = path.join(__dirname, 'stock.json');
+const sessionsFile = path.join(__dirname, 'sessions.json');
 let isShutdown = false;
 let shutdownEndTime = null;
 
@@ -52,7 +53,52 @@ async function initializeStock() {
     }
 }
 
-// Routes
+// Initialize sessions.json
+async function initializeSessions() {
+    try {
+        if (!(await fs.access(sessionsFile).catch(() => false))) {
+            console.log('sessions.json not found, creating empty');
+            await fs.writeFile(sessionsFile, JSON.stringify({ sessions: [], carts: [] }, null, 2));
+        } else {
+            const data = JSON.parse(await fs.readFile(sessionsFile));
+            sessions = new Map(data.sessions || []);
+            carts = new Map(data.carts || []);
+        }
+    } catch (err) {
+        console.error('Error initializing sessions.json:', err);
+        sessions = new Map();
+        carts = new Map();
+    }
+}
+
+// Save sessions and carts
+async function saveSessions() {
+    try {
+        await fs.writeFile(sessionsFile, JSON.stringify({
+            sessions: Array.from(sessions.entries()),
+            carts: Array.from(carts.entries())
+        }, null, 2));
+    } catch (err) {
+        console.error('Error saving sessions.json:', err);
+    }
+}
+
+// Login endpoint
+app.post('/login', async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).json({ success: false, error: 'Email required' });
+    }
+    const normalizedEmail = email.toLowerCase();
+    if (bannedEmails.includes(normalizedEmail)) {
+        return res.status(403).json({ success: false, error: 'Email is banned' });
+    }
+    sessions.set(normalizedEmail, { lastActive: Date.now() });
+    await saveSessions();
+    res.json({ success: true, email: normalizedEmail });
+});
+
+// Other routes (updated to persist sessions/carts)
 app.get('/stock', (req, res) => {
     if (isShutdown) {
         return res.status(503).json({ success: false, error: 'Site is temporarily down' });
@@ -76,8 +122,12 @@ app.post('/order', async (req, res) => {
     if (!email || !name || !items || !Array.isArray(items)) {
         return res.status(400).json({ success: false, error: 'Invalid request data' });
     }
-    sessions.set(email, { lastActive: Date.now() });
-    carts.set(email, items);
+    const normalizedEmail = email.toLowerCase();
+    if (bannedEmails.includes(normalizedEmail)) {
+        return res.status(403).json({ success: false, error: 'Email is banned' });
+    }
+    sessions.set(normalizedEmail, { lastActive: Date.now() });
+    carts.set(normalizedEmail, items);
     let not_in_stock = [];
     let orderSummary = '';
 
@@ -93,7 +143,8 @@ app.post('/order', async (req, res) => {
 
     try {
         await fs.writeFile(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
-        carts.set(email, []);
+        carts.set(normalizedEmail, []);
+        await saveSessions();
     } catch (err) {
         console.error('Error writing stock.json:', err);
         return res.status(500).json({ success: false, error: 'Failed to update stock' });
@@ -101,7 +152,7 @@ app.post('/order', async (req, res) => {
 
     const mailOptions = {
         from: process.env.GMAIL_USER || 'noreply.pharmaville@gmail.com',
-        to: email,
+        to: normalizedEmail,
         subject: 'Pharmaville Order Confirmation',
         text: `Dear ${name},\n\nYour order has been received:\n${orderSummary}\nNot in stock: ${not_in_stock.join(', ') || 'None'}\n\nThank you!`
     };
@@ -171,8 +222,10 @@ app.delete('/update-stock', async (req, res) => {
     res.json({ success: true });
 });
 
-app.post('/end-sessions', (req, res) => {
+app.post('/end-sessions', async (req, res) => {
     sessions.clear();
+    carts.clear();
+    await saveSessions();
     res.json({ success: true });
 });
 
@@ -184,12 +237,13 @@ app.post('/alert-all', (req, res) => {
     res.json({ success: true, message });
 });
 
-app.post('/clear-carts', (req, res) => {
+app.post('/clear-carts', async (req, res) => {
     carts.clear();
+    await saveSessions();
     res.json({ success: true });
 });
 
-app.post('/end-sessions-20m', (req, res) => {
+app.post('/end-sessions-20m', async (req, res) => {
     const now = Date.now();
     const twentyMinutes = 20 * 60 * 1000;
     let ended = 0;
@@ -200,6 +254,7 @@ app.post('/end-sessions-20m', (req, res) => {
             ended++;
         }
     }
+    await saveSessions();
     res.json({ success: true, ended });
 });
 
@@ -231,6 +286,7 @@ app.post('/ban-email', async (req, res) => {
         carts.delete(normalizedEmail);
         try {
             await fs.writeFile(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
+            await saveSessions();
         } catch (err) {
             console.error('Error writing stock.json:', err);
             return res.status(500).json({ success: false, error: 'Failed to update banned emails' });
@@ -254,7 +310,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Start server
-initializeStock()
+Promise.all([initializeStock(), initializeSessions()])
     .then(() => {
         app.listen(port, () => {
             console.log(`Server running on port ${port}`);
