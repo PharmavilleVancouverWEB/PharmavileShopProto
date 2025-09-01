@@ -7,17 +7,24 @@ body {
 
 #loading {
     display: none;
-    position: absolute;
+    position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 100;
+    opacity: 0;
+    animation: fadeIn 0.3s ease-in forwards;
 }
 
 #loading img {
     width: 80px;
     height: 80px;
     border-radius: 10px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 #login-form {
@@ -87,7 +94,7 @@ h1 {
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    position: relative;
+    transition: background 0.3s;
 }
 
 #place-order:hover {
@@ -108,6 +115,11 @@ h1 {
     justify-content: space-between;
     align-items: center;
     background: white;
+    transition: transform 0.2s;
+}
+
+.item:hover {
+    transform: scale(1.02);
 }
 
 .item button {
@@ -124,59 +136,6 @@ h1 {
     background: #218838;
 }
 
-#admin-panel {
-    width: 400px;
-    background: #f0f0f0;
-    padding: 20px;
-    position: fixed;
-    top: 20px;
-    right: -420px;
-    transition: right 0.3s ease;
-    z-index: 99;
-    box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
-}
-
-#admin-panel.active {
-    right: 0;
-}
-
-#admin-panel h2 {
-    margin-top: 0;
-}
-
-#admin-panel input, #admin-panel button {
-    display: block;
-    width: 100%;
-    margin: 10px 0;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-#admin-panel button {
-    background: #007bff;
-    color: white;
-    border: none;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-#admin-panel button:hover {
-    background: #0056b3;
-}
-
-#console {
-    display: none;
-    background: #333;
-    color: white;
-    padding: 10px;
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    box-sizing: border-box;
-    z-index: 98;
-}
-
 #chat-button {
     position: fixed;
     bottom: 20px;
@@ -188,7 +147,6 @@ h1 {
     border-radius: 4px;
     cursor: pointer;
     transition: background 0.3s;
-    z-index: 97;
 }
 
 #chat-button:hover {
@@ -204,15 +162,6 @@ h1 {
 
     #login-form, #cart, #stock-list {
         padding: 10px;
-    }
-
-    #admin-panel {
-        width: 100%;
-        right: -100%;
-    }
-
-    #admin-panel.active {
-        right: 0;
     }
 
     #chat-button {
