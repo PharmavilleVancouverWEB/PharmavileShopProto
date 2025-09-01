@@ -1,395 +1,194 @@
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: Arial, sans-serif;
     margin: 0;
     padding: 20px;
-    background-color: #f5f5f5;
-    color: #333;
-    line-height: 1.6;
-    overflow: hidden; /* Prevent scroll during animations */
+    background-color: #f8f8f8;
 }
 
-.login-container {
+#loading {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    transition: background-color 0.5s ease;
-}
-
-.login-form {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 400px;
-    text-align: center;
-    animation: fadeIn 0.5s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.login-form h2 {
-    margin-bottom: 20px;
-    font-size: 1.5rem;
-    color: #1a73e8;
-}
-
-.login-form input {
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
-}
-
-.login-form input:focus {
-    border-color: #1a73e8;
-    box-shadow: 0 0 5px rgba(26, 115, 232, 0.5);
-    transform: scale(1.02);
-    animation: typing-glow 1s infinite alternate;
-}
-
-@keyframes typing-glow {
-    0% { box-shadow: 0 0 5px rgba(26, 115, 232, 0.5); }
-    100% { box-shadow: 0 0 10px rgba(26, 115, 232, 0.8); }
-}
-
-.btn {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.btn:active {
-    transform: scale(0.95);
-    animation: button-press 0.3s ease;
-}
-
-@keyframes button-press {
-    0% { transform: scale(1); }
-    50% { transform: scale(0.95); }
-    100% { transform: scale(1); }
-}
-
-.btn-primary {
-    background-color: #1a73e8;
-    color: white;
-}
-
-.btn-primary:hover {
-    background-color: #1557b0;
-}
-
-.btn-secondary {
-    background-color: #6c757d;
-    color: white;
-    margin-top: 10px;
-}
-
-.btn-secondary:hover {
-    background-color: #5a6268;
-}
-
-.btn-danger {
-    background-color: #dc3545;
-    color: white;
-}
-
-.btn-danger:hover {
-    background-color: #c82333;
-}
-
-.btn-close {
-    background: none;
-    border: none;
-    font-size: 1rem;
-    color: #333;
-    cursor: pointer;
-    transition: color 0.3s ease;
-}
-
-.btn-close:hover {
-    color: #dc3545;
-}
-
-.btn-chat {
-    background-color: #ffc107;
-    color: #333;
-    margin-top: 10px;
-}
-
-.btn-chat:hover {
-    background-color: #e0a800;
-}
-
-.btn-add-to-cart {
-    padding: 6px 12px;
-    font-size: 0.8rem;
-    background-color: #34c759;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
-    animation: fadeIn 0.5s ease;
-}
-
-.btn-add-to-cart:hover {
-    background-color: #2ca44e;
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.btn-add-to-cart:active {
-    transform: scale(0.95);
-}
-
-.shop-container {
-    max-width: 1000px;
-    margin: 0 auto;
-    animation: fadeIn 0.5s ease;
-}
-
-.shop-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 20px;
-}
-
-.stock-section, .cart-section {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    animation: slideIn 0.5s ease;
-}
-
-@keyframes slideIn {
-    from { transform: translateX(-20px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-.stock-section h2, .cart-section h2 {
-    font-size: 1.25rem;
-    margin-bottom: 15px;
-    color: #1a73e8;
-    animation: fadeIn 0.5s ease 0.2s forwards;
-    opacity: 0;
-}
-
-.items-list div, .cart-list div {
-    padding: 10px;
-    margin-bottom: 10px;
-    border-bottom: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.9rem;
-}
-
-.items-list div:last-child, .cart-list div:last-child {
-    border-bottom: none;
-}
-
-.cart-list div {
-    color: #555;
-    animation: fadeIn 0.5s ease;
-}
-
-.loading-overlay {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
     z-index: 1000;
-    animation: fadeIn 0.5s ease;
 }
 
-.loading-overlay img {
-    width: 240px; /* 2x larger than original 120px */
-    height: auto;
-    border-radius: 20px; /* Rounded corners for GIF */
-    animation: pulse 1.5s infinite;
+#loading img {
+    width: 240px;
+    height: 240px;
+    border-radius: 20px;
 }
 
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-}
-
-.result {
-    margin-top: 15px;
-    font-size: 0.9rem;
-    color: #d93025;
-    text-align: center;
-    animation: fadeIn 0.5s ease;
-}
-
-.admin-menu {
-    position: fixed;
-    top: 100px;
-    left: 100px;
-    width: 500px; /* Bigger admin panel */
-    background: white;
-    border-radius: 12px; /* Refined style */
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-    z-index: 2000;
-    cursor: move;
-    animation: slideIn 0.5s ease, fadeIn 0.5s ease;
-}
-
-.admin-header {
-    background: #1a73e8;
-    color: white;
-    padding: 15px;
-    border-radius: 12px 12px 0 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-weight: bold;
-    animation: fadeIn 0.5s ease;
-}
-
-.admin-section {
+#login-form {
+    max-width: 400px;
+    margin: 20px auto;
     padding: 20px;
-    animation: slideIn 0.5s ease 0.2s forwards;
-    opacity: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
 }
 
-.admin-section h3 {
-    margin-bottom: 15px;
-    font-size: 1.2rem;
+#login-form h2 {
+    margin-bottom: 20px;
 }
 
-#stockForm input {
+#login-form input {
+    display: block;
     width: 100%;
+    margin: 10px 0;
     padding: 10px;
-    margin: 8px 0;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
-}
-
-#stockForm input:focus {
-    border-color: #1a73e8;
-    animation: typing-glow 1s infinite alternate;
-    transform: scale(1.02);
-}
-
-#stockForm button {
-    margin-top: 12px;
-}
-
-.console-menu {
-    background: #f8f9fa;
-    padding: 10px;
-    border-radius: 6px;
-    max-height: 200px;
-    overflow: hidden;
-}
-
-#consoleInput {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #ddd;
+    border: 1px solid #ccc;
     border-radius: 4px;
-    font-size: 0.9rem;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 
-#consoleInput:focus {
-    border-color: #1a73e8;
-    animation: typing-glow 1s infinite alternate;
-    transform: scale(1.02);
+#login-form button {
+    width: 100%;
+    padding: 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
 }
 
-.console-output {
-    max-height: 150px;
-    overflow-y: auto;
-    font-family: 'Courier New', monospace;
-    font-size: 0.85rem;
+#login-form button:hover {
+    background: #0056b3;
+}
+
+h1 {
+    text-align: center;
     color: #333;
 }
 
-.console-line {
-    padding: 5px 0;
-    border-bottom: 1px solid #eee;
-    animation: fadeIn 0.5s ease;
+#cart, #stock-list {
+    max-width: 800px;
+    margin: 20px auto;
 }
 
-.console-line:last-child {
-    border-bottom: none;
+.item {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
 }
 
-@media (max-width: 768px) {
-    .shop-grid {
-        grid-template-columns: 1fr;
-    }
-    .cart-section {
-        margin-top: 20px;
-    }
-    .admin-menu {
-        width: 95%;
-        left: 2.5%;
-    }
+.item button {
+    padding: 5px 10px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
 }
 
-#loginBtn {
-    position: relative;
-    transform-origin: center center;
+.item button:hover {
+    background: #218838;
 }
 
-#loginBtn.expanding {
-    animation: expand-blue 1s forwards;
+#admin-panel {
+    width: 500px;
+    background: #f0f0f0;
+    padding: 20px;
+    position: fixed;
+    top: 20px;
+    right: -520px;
+    transition: right 0.3s ease;
+    z-index: 999;
+    box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
 }
 
-@keyframes expand-blue {
-    0% {
-        transform: scale(1);
-        background-color: #1a73e8;
-    }
-    50% {
-        transform: scale(1.2);
-        background-color: #1557b0;
-    }
-    100% {
-        transform: scale(50);
-        background-color: #1a73e8;
-        border-radius: 0;
-        width: 100vw;
-        height: 100vh;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) scale(50);
-        z-index: 9999;
-    }
+#admin-panel.active {
+    right: 0;
 }
 
-.blue-fade {
-    background-color: #1a73e8;
-    transition: opacity 0.5s ease;
-    opacity: 0;
+#admin-panel h2 {
+    margin-top: 0;
+}
+
+#admin-panel input, #admin-panel button {
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#admin-panel button {
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+#admin-panel button:hover {
+    background: #0056b3;
+}
+
+#console {
+    display: none;
+    background: #333;
+    color: white;
+    padding: 10px;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#chat-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+#chat-button:hover {
+    background: #0056b3;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    #loading img {
+        width: 160px;
+        height: 160px;
+    }
+
+    #login-form, #cart, #stock-list {
+        padding: 10px;
+    }
+
+    #admin-panel {
+        width: 100%;
+        right: -100%;
+    }
+
+    #admin-panel.active {
+        right: 0;
+    }
+
+    #chat-button {
+        bottom: 10px;
+        right: 10px;
+        padding: 8px 16px;
+    }
 }
