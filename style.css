@@ -87,10 +87,30 @@ body {
     background-color: #5a6268;
 }
 
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    color: #333;
+    cursor: pointer;
+}
+
+.btn-close:hover {
+    color: #dc3545;
+}
+
 .btn-chat {
     background-color: #ffc107;
     color: #333;
-    margin-top: 10px;
     position: fixed;
     bottom: 20px;
     right: 20px;
@@ -132,7 +152,7 @@ body {
     gap: 20px;
 }
 
-.stock-section, .cart-section, .pickup-form {
+.stock-section, .cart-section, .pickup-form, .chat-form {
     background: white;
     padding: 20px;
     border-radius: 8px;
@@ -140,7 +160,7 @@ body {
     animation: fadeIn 0.5s ease;
 }
 
-.stock-section h2, .cart-section h2, .pickup-form h2 {
+.stock-section h2, .cart-section h2, .pickup-form h2, .chat-form h2 {
     font-size: 1.25rem;
     margin-bottom: 15px;
     color: #1a73e8;
@@ -165,18 +185,102 @@ body {
     border-bottom: none;
 }
 
-.pickup-form {
+.pickup-form, .chat-form {
     margin-top: 20px;
     max-width: 400px;
 }
 
-.pickup-form input {
+.pickup-form input, .chat-form input {
     width: 100%;
     padding: 10px;
     margin: 10px 0;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 0.9rem;
+}
+
+.chat-messages {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+    background: #f9f9f9;
+}
+
+.chat-messages div {
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.admin-panel {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    width: 400px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    animation: fadeIn 0.5s ease;
+}
+
+.admin-header {
+    background: #1a73e8;
+    color: white;
+    padding: 10px;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-tabs {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px;
+    background: #f0f0f0;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.tab-btn:hover {
+    background: #e0e0e0;
+}
+
+.tab-btn.active {
+    background: white;
+    border-bottom: 2px solid #1a73e8;
+}
+
+.admin-tab {
+    padding: 20px;
+}
+
+#stockForm input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.chat-queue div {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-queue button {
+    padding: 5px 10px;
+    font-size: 0.8rem;
 }
 
 .loading-overlay {
@@ -218,8 +322,12 @@ body {
     .shop-grid {
         grid-template-columns: 1fr;
     }
-    .cart-section, .pickup-form {
+    .cart-section, .pickup-form, .chat-form {
         margin-top: 20px;
+    }
+    .admin-panel {
+        width: 95%;
+        right: 2.5%;
     }
     .btn-chat {
         bottom: 10px;
