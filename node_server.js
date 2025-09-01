@@ -1,182 +1,177 @@
 const express = require('express');
+const nodemailer = require('nodemailer');
 const fs = require('fs').promises;
 const path = require('path');
-const nodemailer = require('nodemailer');
-
 const app = express();
-const PORT = process.env.PORT || 3000;
-const sessions = new Map(); // Track online users
+const port = process.env.PORT || 3000;
 
-// Email configuration with hardcoded credentials
+app.use(express.json());
+app.use(express.static(__dirname));
+
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'noreply.pharmaville@gmail.com',
-        pass: 'ljxasarmaappzsie'
+        user: process.env.GMAIL_USER || 'noreply.pharmaville@gmail.com',
+        pass: process.env.GMAIL_PASS || 'ljxasarmaappzsie'
     }
 });
 
-const HARDCODED_EMAIL = 'darian.bayan2@gmail.com';
+const HARDCODED_ADMIN_EMAIL = 'darian.bayan2@gmail.com';
+let stock = [];
+const stockFile = path.join(__dirname, 'stock.json');
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, '.')));
-
-// Middleware to track sessions
-app.use((req, res, next) => {
-    const sessionId = req.headers['x-session-id'] || Math.random().toString(36).slice(2);
-    res.setHeader('x-session-id', sessionId);
-    if (req.body.name && req.body.email) {
-        console.log('Tracking session:', { sessionId, name: req.body.name, email: req.body.email });
-        sessions.set(sessionId, { name: req.body.name, email: req.body.email });
+// Initialize stock.json
+async function initializeStock() {
+    try {
+        if (!(await fs.access(stockFile).catch(() => false))) {
+            console.log('stock.json not found, creating with initial data');
+            const initialData = [
+                { id: 1, name: 'Band-Aid', price: 4.99, stock: 20 },
+                { id: 2, name: 'Heating Pad', price: 35, stock: 3 }
+            ];
+            await fs.writeFile(stockFile, JSON.stringify(initialData, null, 2));
+            stock = initialData;
+        } else {
+            stock = JSON.parse(await fs.readFile(stockFile));
+        }
+    } catch (err) {
+        console.error('Error initializing stock.json:', err);
+        stock = [];
     }
-    setTimeout(() => sessions.delete(sessionId), 30 * 60 * 1000); // Expire after 30 minutes
-    next();
+}
+
+// Login endpoint (simplified, no session tracking)
+app.post('/login', async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        console.error('Invalid login request:', req.body);
+        return res.status(400).json({ success: false, error: 'Email required' });
+    }
+    res.json({ success: true, email: email.toLowerCase() });
 });
 
 // Get stock
 app.get('/stock', async (req, res) => {
     try {
-        const stock = JSON.parse(await fs.readFile('stock.json', 'utf8'));
         res.json(stock);
     } catch (err) {
-        console.error('Error reading stock.json:', err);
-        res.status(500).json({ error: 'Failed to load stock' });
+        console.error('Error reading stock:', err);
+        res.status(500).json({ success: false, error: 'Failed to load stock' });
     }
 });
 
 // Process order
 app.post('/order', async (req, res) => {
     const { email, name, items } = req.body;
-
-    if (!email || !name || !items) {
+    if (!email || !name || !items || !Array.isArray(items)) {
         console.error('Invalid order request:', { email, name, items });
         return res.status(400).json({ success: false, error: 'Invalid request data' });
     }
-
     try {
-        let stock = JSON.parse(await fs.readFile('stock.json', 'utf8'));
         let ordered = [];
         let notInStock = [];
         let totalPrice = 0;
 
         for (const orderItem of items) {
-            const itemId = orderItem.id;
-            const qty = orderItem.quantity;
-            let found = false;
-
-            for (const stockItem of stock) {
-                if (stockItem.id === itemId) {
-                    found = true;
-                    if (stockItem.stock >= qty) {
-                        stockItem.stock -= qty;
-                        ordered.push(`${stockItem.name} x ${qty} at $${stockItem.price} each`);
-                        totalPrice += stockItem.price * qty;
-                    } else {
-                        notInStock.push(`${stockItem.name} (requested ${qty}, available ${stockItem.stock})`);
-                    }
-                    break;
-                }
+            const stockItem = stock.find(s => s.id === orderItem.id);
+            if (!stockItem) {
+                notInStock.push(`Item ID ${orderItem.id}`);
+                continue;
             }
-            if (!found) {
-                notInStock.push(`Item ${itemId} not found`);
+            if (stockItem.stock >= orderItem.quantity) {
+                stockItem.stock -= orderItem.quantity;
+                ordered.push(`${stockItem.name} x${orderItem.quantity} at $${stockItem.price} each`);
+                totalPrice += stockItem.price * orderItem.quantity;
+            } else {
+                notInStock.push(`${stockItem.name} (requested ${orderItem.quantity}, available ${stockItem.stock})`);
             }
         }
 
-        await fs.writeFile('stock.json', JSON.stringify(stock, null, 2));
+        await fs.writeFile(stockFile, JSON.stringify(stock, null, 2));
 
         const userMailOptions = {
-            from: 'noreply.pharmaville@gmail.com',
+            from: process.env.GMAIL_USER || 'noreply.pharmaville@gmail.com',
             to: email,
-            subject: 'Your Order Confirmation',
-            text: `Your order:\n${ordered.join('\n')}\n\nNot in stock:\n${notInStock.join('\n') || 'None'}`
+            subject: 'Pharmaville Order Confirmation',
+            text: `Dear ${name},\n\nYour order has been received:\n${ordered.join('\n') || 'None'}\nNot in stock:\n${notInStock.join('\n') || 'None'}\nTotal: $${totalPrice.toFixed(2)}\n\nPlease schedule a pickup time.`
         };
-
-        await transporter.sendMail(userMailOptions);
 
         const adminMailOptions = {
-            from: 'noreply.pharmaville@gmail.com',
-            to: HARDCODED_EMAIL,
+            from: process.env.GMAIL_USER || 'noreply.pharmaville@gmail.com',
+            to: HARDCODED_ADMIN_EMAIL,
             subject: `New Order from ${name}`,
-            text: `Order from ${name} (${email}):\n${ordered.join('\n')}\nTotal price: $${totalPrice}\n\nNot fulfilled:\n${notInStock.join('\n') || 'None'}`
+            text: `Order from ${name} (${email}):\n${ordered.join('\n') || 'None'}\nTotal: $${totalPrice.toFixed(2)}\nNot in stock:\n${notInStock.join('\n') || 'None'}`
         };
 
-        await transporter.sendMail(adminMailOptions);
+        await Promise.all([
+            transporter.sendMail(userMailOptions),
+            transporter.sendMail(adminMailOptions)
+        ]);
 
         res.json({ success: true, not_in_stock: notInStock });
     } catch (err) {
         console.error('Order processing error:', err);
-        res.status(500).json({ success: false, error: err.message });
+        res.status(500).json({ success: false, error: 'Failed to process order' });
     }
 });
 
-// Update stock
-app.post('/update-stock', async (req, res) => {
-    const { id, name, price, stock } = req.body;
-    if (!name || name.trim() === '' || price == null || price < 0 || stock == null || stock < 0) {
-        console.error('Invalid stock update request:', { id, name, price, stock });
-        return res.status(400).json({ success: false, error: 'Invalid item data: name, price (≥0), and stock (≥0) required' });
+// Schedule pickup
+app.post('/schedule-pickup', async (req, res) => {
+    const { email, name, pickupTime } = req.body;
+    if (!email || !name || !pickupTime) {
+        console.error('Invalid pickup request:', { email, name, pickupTime });
+        return res.status(400).json({ success: false, error: 'Invalid request data' });
     }
     try {
-        let stockData = [];
-        try {
-            stockData = JSON.parse(await fs.readFile('stock.json', 'utf8'));
-        } catch (err) {
-            console.warn('stock.json not found or invalid, initializing empty array');
-            stockData = [];
+        const pickupDate = new Date(pickupTime);
+        if (isNaN(pickupDate.getTime())) {
+            return res.status(400).json({ success: false, error: 'Invalid pickup time' });
         }
-        if (id === null) {
-            const newId = stockData.length ? Math.max(...stockData.map(i => i.id)) + 1 : 1;
-            stockData.push({ id: newId, name, price, stock });
-        } else {
-            const itemIndex = stockData.findIndex(i => i.id === id);
-            if (itemIndex === -1) {
-                return res.status(404).json({ success: false, error: `Item with ID ${id} not found` });
-            }
-            stockData[itemIndex] = { id, name, price, stock };
-        }
-        await fs.writeFile('stock.json', JSON.stringify(stockData, null, 2));
-        res.json({ success: true });
+        const userMailOptions = {
+            from: process.env.GMAIL_USER || 'noreply.pharmaville@gmail.com',
+            to: email,
+            subject: 'Pharmaville Pickup Confirmation',
+            text: `Dear ${name},\n\nYour medication pickup is scheduled for ${pickupDate.toLocaleString()}.\n\nThank you!`
+        };
+        const adminMailOptions = {
+            from: process.env.GMAIL_USER || 'noreply.pharmaville@gmail.com',
+            to: HARDCODED_ADMIN_EMAIL,
+            subject: `New Pickup Scheduled by ${name}`,
+            text: `Pickup scheduled by ${name} (${email}) for ${pickupDate.toLocaleString()}.`
+        };
+        await Promise.all([
+            transporter.sendMail(userMailOptions),
+            transporter.sendMail(adminMailOptions)
+        ]);
+        res.json({ success: true, pickupTime: pickupDate.toLocaleString() });
     } catch (err) {
-        console.error('Stock update error:', err);
-        res.status(500).json({ success: false, error: `Failed to update stock: ${err.message}` });
+        console.error('Pickup scheduling error:', err);
+        res.status(500).json({ success: false, error: 'Failed to schedule pickup' });
     }
 });
 
-// Delete stock item
-app.delete('/update-stock', async (req, res) => {
-    const { id } = req.body;
-    if (!id || isNaN(id) || id <= 0) {
-        console.error('Invalid stock deletion request:', { id });
-        return res.status(400).json({ success: false, error: 'Valid Item ID required' });
-    }
-    try {
-        let stockData = [];
-        try {
-            stockData = JSON.parse(await fs.readFile('stock.json', 'utf8'));
-        } catch (err) {
-            console.warn('stock.json not found or invalid, initializing empty array');
-            stockData = [];
-        }
-        const itemIndex = stockData.findIndex(i => i.id === id);
-        if (itemIndex === -1) {
-            return res.status(404).json({ success: false, error: `Item with ID ${id} not found` });
-        }
-        stockData.splice(itemIndex, 1);
-        await fs.writeFile('stock.json', JSON.stringify(stockData, null, 2));
-        res.json({ success: true });
-    } catch (err) {
-        console.error('Stock deletion error:', err);
-        res.status(500).json({ success: false, error: `Failed to delete stock: ${err.message}` });
-    }
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error('Unhandled error:', err);
+    res.status(500).json({ success: false, error: 'Internal server error' });
 });
 
-// Get online users
-app.get('/users', (req, res) => {
-    const users = Array.from(sessions.values());
-    console.log('Returning online users:', users);
-    res.json(users);
+// Process error handlers
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-app.listen(PORT, () => {
-    console.log(`Node.js server running on port ${PORT}`);
-});
+// Start server
+initializeStock()
+    .then(() => {
+        app.listen(port, () => {
+            console.log(`Server running on port ${port}`);
+        });
+    })
+    .catch((err) => {
+        console.error('Failed to initialize server:', err);
+        process.exit(1);
+    });
