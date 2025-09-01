@@ -1,332 +1,152 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const apiUrl = ''; // Relative path, same domain
-    let cart = [];
-    let stockItems = []; // Store stock data for name lookup
-    let isDragging = false;
-    let currentX;
-    let currentY;
-    let xOffset = 0;
-    let yOffset = 0;
+let stockCache = null;
+let user = null;
+const loading = document.getElementById('loading');
+const loginForm = document.getElementById('login-form');
+const stockList = document.getElementById('stock-list');
+const cartDiv = document.getElementById('cart');
+const cartItemsDiv = document.getElementById('cart-items');
+const placeOrderBtn = document.getElementById('place-order');
 
-    // DOM elements
-    const loginForm = document.getElementById('loginForm');
-    const loginDiv = document.getElementById('login');
-    const shopDiv = document.getElementById('shop');
-    const itemsDiv = document.getElementById('items');
-    const cartDiv = document.getElementById('cart');
-    const orderBtn = document.getElementById('orderBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const chatBtn = document.getElementById('chatBtn');
-    const loadingDiv = document.getElementById('loading');
-    const resultDiv = document.getElementById('result');
-    const adminMenu = document.getElementById('adminMenu');
-    const stockForm = document.getElementById('stockForm');
-    const deleteItemBtn = document.getElementById('deleteItemBtn');
-    const closeAdminBtn = document.getElementById('closeAdminBtn');
-    const onlineUsersDiv = document.getElementById('onlineUsers');
-    const loginBtn = document.getElementById('loginBtn');
-
-    // Validate critical DOM elements
-    if (!loginForm || !loginDiv || !shopDiv || !itemsDiv || !cartDiv || !orderBtn || !logoutBtn || !loadingDiv || !resultDiv || !loginBtn) {
-        console.error('Critical DOM elements missing:', { loginForm, loginDiv, shopDiv, itemsDiv, cartDiv, orderBtn, logoutBtn, loadingDiv, resultDiv, loginBtn });
-        resultDiv.textContent = 'Error: Page setup failed';
-        return;
-    }
-
-    loginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        console.log('Login form submitted');
-        loginBtn.classList.add('expanding');
-        loginDiv.classList.add('blue-fade');
-        setTimeout(() => {
-            console.log('Animation complete, processing login');
-            const nameInput = document.getElementById('name');
-            const emailInput = document.getElementById('email');
-            if (!nameInput || !emailInput) {
-                console.error('Form inputs missing:', { nameInput, emailInput });
-                resultDiv.textContent = 'Error: Form inputs not found';
-                loginBtn.classList.remove('expanding');
-                loginDiv.classList.remove('blue-fade');
-                return;
-            }
-            const name = nameInput.value.trim();
-            const email = emailInput.value.trim().toLowerCase();
-            if (!name || !email) {
-                console.error('Invalid input:', { name, email });
-                resultDiv.textContent = 'Error: Name and email required';
-                loginBtn.classList.remove('expanding');
-                loginDiv.classList.remove('blue-fade');
-                return;
-            }
-            window.currentUser = { name, email };
-            console.log('User set:', window.currentUser);
-            loginDiv.style.display = 'none';
-            shopDiv.style.display = 'block';
-            shopDiv.classList.add('fade-in');
-            if (name === 'Administrator' && email === 'noreply.pharmaville@gmail.com') {
-                if (adminMenu) {
-                    adminMenu.classList.add('animated');
-                    adminMenu.style.display = 'block';
-                    console.log('Admin menu displayed');
-                    loadOnlineUsers();
-                    setInterval(loadOnlineUsers, 10000); // Update users every 10 seconds
-                } else {
-                    console.error('Admin menu element not found');
-                    resultDiv.textContent = 'Error: Admin menu not found';
-                }
-            }
-            loadStock();
-        }, 1000); // Match animation duration
-    });
-
-    // Draggable admin menu
-    if (adminMenu) {
-        adminMenu.addEventListener('mousedown', (e) => {
-            if (e.target.classList.contains('admin-header')) {
-                isDragging = true;
-                currentX = e.clientX - xOffset;
-                currentY = e.clientY - yOffset;
-            }
+async function login() {
+    const email = document.getElementById('login-email').value;
+    const name = document.getElementById('login-name').value;
+    if (!email || !name) return alert('Email and name required');
+    try {
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
         });
-
-        document.addEventListener('mousemove', (e) => {
-            if (isDragging) {
-                e.preventDefault();
-                xOffset = e.clientX - currentX;
-                yOffset = e.clientY - currentY;
-                adminMenu.style.left = `${xOffset}px`;
-                adminMenu.style.top = `${yOffset}px`;
-            }
-        });
-
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
-        });
-
-        if (closeAdminBtn) {
-            closeAdminBtn.addEventListener('click', () => {
-                adminMenu.style.display = 'none';
-            });
-        }
-    }
-
-    function loadStock() {
-        // Render cached stock to prevent flicker
-        if (stockItems.length > 0) {
-            console.log('Rendering cached stock:', stockItems);
-            renderStock(stockItems);
-        }
-
-        fetch(`${apiUrl}/stock`)
-            .then(res => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch stock`);
-                return res.json();
-            })
-            .then(items => {
-                console.log('Fetched stock:', items);
-                stockItems = items;
-                renderStock(items);
-            })
-            .catch(err => {
-                console.error('Stock load error:', err);
-                resultDiv.textContent = `Error loading stock: ${err.message}`;
-            });
-    }
-
-    function renderStock(items) {
-        itemsDiv.innerHTML = '';
-        items.forEach(item => {
-            const div = document.createElement('div');
-            div.innerHTML = `${item.name} - $${item.price} (Stock: ${item.stock}) <button class="btn btn-add-to-cart" onclick="addToCart(${item.id})">Add to Cart</button>`;
-            itemsDiv.appendChild(div);
-        });
-    }
-
-    setInterval(loadStock, 10000);
-
-    window.addToCart = function(id) {
-        const item = stockItems.find(i => i.id === id);
-        if (!item) {
-            resultDiv.textContent = 'Error: Item not found';
-            return;
-        }
-        const existing = cart.find(c => c.id === id);
-        if (existing) {
-            existing.quantity++;
+        const result = await response.json();
+        if (result.success) {
+            user = { email, name };
+            localStorage.setItem('user', JSON.stringify(user));
+            loginForm.style.display = 'none';
+            stockList.style.display = 'block';
+            cartDiv.style.display = 'block';
+            fetchStock();
+            updateCartDisplay();
         } else {
-            cart.push({ id, name: item.name, quantity: 1 });
+            alert(`Login failed: ${result.error}`);
         }
-        updateCart();
-    };
-
-    function updateCart() {
-        cartDiv.innerHTML = '';
-        cart.forEach(c => {
-            const div = document.createElement('div');
-            div.textContent = `${c.name} x ${c.quantity}`;
-            div.classList.add('animated');
-            cartDiv.appendChild(div);
-        });
+    } catch (err) {
+        console.error('Login error:', err);
+        alert('Failed to login. Retrying in 5s...');
+        setTimeout(login, 5000);
     }
+}
 
-    orderBtn.addEventListener('click', () => {
-        if (cart.length === 0) {
-            resultDiv.textContent = 'Cart is empty!';
-            return;
+async function fetchStock() {
+    if (!user) return;
+    try {
+        const response = await fetch('/stock');
+        if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+        const data = await response.json();
+        stockCache = data;
+        displayStock(data);
+    } catch (err) {
+        console.error('Fetch stock error:', err);
+        stockList.innerHTML = '<p>Error loading stock. Retrying...</p>';
+        setTimeout(fetchStock, 5000);
+    }
+}
+
+function displayStock(stock) {
+    stockList.innerHTML = stock.map(item => `
+        <div class="item">
+            ${item.name} - $${item.price} (Stock: ${item.stock})
+            <button onclick="addToCart(${item.id})">Add to Cart</button>
+        </div>
+    `).join('');
+}
+
+function addToCart(itemId) {
+    if (!user) return alert('Please login first');
+    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const item = stockCache.find(s => s.id === itemId);
+    if (!item) return alert('Item not found');
+    const cartItem = cart.find(c => c.id === itemId);
+    if (cartItem) {
+        if (cartItem.quantity + 1 > item.stock) return alert('Not enough stock');
+        cartItem.quantity += 1;
+    } else {
+        if (item.stock < 1) return alert('Not enough stock');
+        cart.push({ id: itemId, quantity: 1 });
+    }
+    localStorage.setItem('cart', JSON.stringify(cart));
+    updateCartDisplay();
+}
+
+async function placeOrder() {
+    if (!user) return alert('Please login first');
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    if (!cart.length) return alert('Cart is empty');
+    try {
+        loading.style.display = 'block';
+        placeOrderBtn.disabled = true;
+        const response = await fetch('/check-ban', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: user.email })
+        });
+        const { banned } = await response.json();
+        if (banned) {
+            user = null;
+            localStorage.removeItem('user');
+            loginForm.style.display = 'block';
+            stockList.style.display = 'none';
+            cartDiv.style.display = 'none';
+            loading.style.display = 'none';
+            placeOrderBtn.disabled = false;
+            return alert('Your email is banned');
         }
-        if (!window.currentUser) {
-            resultDiv.textContent = 'Error: Please log in again';
-            return;
-        }
-        loadingDiv.style.display = 'flex';
-        resultDiv.textContent = '';
-        const user = window.currentUser;
-        fetch(`${apiUrl}/order`, {
+
+        const response2 = await fetch('/order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: user.email, name: user.name, items: cart })
-        })
-            .then(res => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}: Order request failed`);
-                return res.json();
-            })
-            .then(result => {
-                loadingDiv.style.display = 'none';
-                if (result.success) {
-                    resultDiv.textContent = `Order placed! Not in stock: ${result.not_in_stock.join(', ') || 'None'}`;
-                    cart = [];
-                    updateCart();
-                    loadStock();
-                } else {
-                    resultDiv.textContent = `Error placing order: ${result.error || 'Unknown error'}`;
-                }
-            })
-            .catch(err => {
-                loadingDiv.style.display = 'none';
-                resultDiv.textContent = `Error placing order: ${err.message}`;
-            });
-    });
-
-    logoutBtn.addEventListener('click', () => {
-        location.reload(); // Refresh page for logout
-    });
-
-    if (chatBtn) {
-        chatBtn.addEventListener('click', () => {
-            alert("Sorry, this is not a released feature!");
         });
-    }
-
-    if (stockForm && deleteItemBtn) {
-        stockForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const idInput = document.getElementById('itemId');
-            const nameInput = document.getElementById('itemName');
-            const priceInput = document.getElementById('itemPrice');
-            const stockInput = document.getElementById('itemStock');
-            if (!nameInput || !priceInput || !stockInput) {
-                resultDiv.textContent = 'Error: Form inputs missing';
-                return;
-            }
-            const id = idInput.value.trim();
-            const name = nameInput.value.trim();
-            const price = parseFloat(priceInput.value);
-            const stock = parseInt(stockInput.value);
-            if (!name || isNaN(price) || price < 0 || isNaN(stock) || stock < 0) {
-                resultDiv.textContent = 'Please enter valid name, price (≥0), and stock (≥0)';
-                return;
-            }
-            const item = { id: id ? parseInt(id) : null, name, price, stock };
-            console.log('Submitting stock update:', item);
-
-            fetch(`${apiUrl}/update-stock`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(item)
-            })
-                .then(res => {
-                    if (!res.ok) throw new Error(`HTTP ${res.status}: Stock update failed`);
-                    return res.json();
-                })
-                .then(result => {
-                    if (result.success) {
-                        loadStock();
-                        stockForm.reset();
-                        resultDiv.textContent = 'Stock updated successfully!';
-                    } else {
-                        resultDiv.textContent = `Error updating stock: ${result.error || 'Unknown error'}`;
-                    }
-                })
-                .catch(err => {
-                    console.error('Stock update error:', err);
-                    resultDiv.textContent = `Error updating stock: ${err.message}`;
-                });
-        });
-
-        deleteItemBtn.addEventListener('click', () => {
-            const idInput = document.getElementById('itemId');
-            if (!idInput) {
-                resultDiv.textContent = 'Error: Item ID input missing';
-                return;
-            }
-            const id = idInput.value.trim();
-            if (!id || isNaN(id) || parseInt(id) <= 0) {
-                resultDiv.textContent = 'Please enter a valid Item ID';
-                return;
-            }
-            console.log('Deleting stock item:', { id });
-
-            fetch(`${apiUrl}/update-stock`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: parseInt(id) })
-            })
-                .then(res => {
-                    if (!res.ok) throw new Error(`HTTP ${res.status}: Stock deletion failed`);
-                    return res.json();
-                })
-                .then(result => {
-                    if (result.success) {
-                        loadStock();
-                        stockForm.reset();
-                        resultDiv.textContent = 'Item deleted successfully!';
-                    } else {
-                        resultDiv.textContent = `Error deleting stock: ${result.error || 'Unknown error'}`;
-                    }
-                })
-                .catch(err => {
-                    console.error('Stock deletion error:', err);
-                    resultDiv.textContent = `Error deleting stock: ${err.message}`;
-                });
-        });
-    }
-
-    function loadOnlineUsers() {
-        if (!onlineUsersDiv) {
-            console.error('Online users div not found');
-            return;
+        const result = await response2.json();
+        if (result.success) {
+            alert('Order placed! Check your email.');
+            localStorage.setItem('cart', '[]');
+            fetchStock();
+            updateCartDisplay();
+        } else {
+            alert(`Order failed: ${result.error}`);
         }
-        fetch(`${apiUrl}/users`)
-            .then(res => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch users`);
-                return res.json();
-            })
-            .then(users => {
-                onlineUsersDiv.innerHTML = '';
-                if (users.length === 0) {
-                    onlineUsersDiv.textContent = 'No users online';
-                } else {
-                    users.forEach(user => {
-                        const div = document.createElement('div');
-                        div.textContent = `${user.name} (${user.email})`;
-                        div.classList.add('animated');
-                        onlineUsersDiv.appendChild(div);
-                    });
-                }
-            })
-            .catch(err => {
-                console.error('Users load error:', err);
-                onlineUsersDiv.textContent = `Error loading users: ${err.message}`;
-            });
+    } catch (err) {
+        console.error('Order error:', err);
+        alert('Failed to place order. Please try again.');
+    } finally {
+        loading.style.display = 'none';
+        placeOrderBtn.disabled = false;
     }
-});
+}
+
+function updateCartDisplay() {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    cartItemsDiv.innerHTML = cart.length ? cart.map(item => {
+        const stockItem = stockCache ? stockCache.find(s => s.id === item.id) : null;
+        return `<div>${stockItem ? stockItem.name : 'Item'} x${item.quantity}</div>`;
+    }).join('') : '<p>Cart is empty</p>';
+    placeOrderBtn.style.display = cart.length ? 'block' : 'none';
+}
+
+function chatToRep() {
+    alert('Chat feature coming soon! Contact us at support@pharmaville.com');
+}
+
+// Initialize
+if (localStorage.getItem('user')) {
+    user = JSON.parse(localStorage.getItem('user'));
+    loginForm.style.display = 'none';
+    stockList.style.display = 'block';
+    cartDiv.style.display = 'block';
+    fetchStock();
+    updateCartDisplay();
+} else {
+    loginForm.style.display = 'block';
+    stockList.style.display = 'none';
+    cartDiv.style.display = 'none';
+}
