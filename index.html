@@ -3,19 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pharmaville Shop Prototype</title>
+    <title>Pharmaville Shop</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="loading" class="loading-overlay">
+        <img src="https://cdn-icons-gif.flaticon.com/15968/15968675.gif" alt="Loading...">
+    </div>
     <div id="login" class="login-container">
         <form id="loginForm" class="login-form">
-            <h2>Welcome</h2>
+            <h2>Welcome to Pharmaville</h2>
             <input type="text" id="name" placeholder="Your Name" required>
             <input type="email" id="email" placeholder="Your Email" required>
             <button type="submit" class="btn btn-primary" id="loginBtn">Enter Shop</button>
         </form>
     </div>
-    <div id="shop" class="shop-container" style="display: none;">
+    <div id="shop" class="shop-container">
+        <h1>Pharmaville Shop</h1>
         <div class="shop-grid">
             <div class="stock-section">
                 <h2>Items in Stock</h2>
@@ -25,35 +29,16 @@
                 <h2>Your Cart</h2>
                 <div id="cart" class="cart-list"></div>
                 <button id="orderBtn" class="btn btn-primary">Place Order</button>
-                <button id="chatBtn" class="btn btn-chat">Chat to a Representative</button>
                 <button id="logoutBtn" class="btn btn-secondary">Logout</button>
-                <div id="loading" class="loading-overlay" style="display: none;">
-                    <img src="https://cdn-icons-gif.flaticon.com/15968/15968675.gif" alt="Loading...">
-                </div>
-                <div id="result" class="result"></div>
             </div>
         </div>
-        <div id="adminMenu" class="admin-menu" style="display: none;">
-            <div class="admin-header">Admin Menu <button id="closeAdminBtn" class="btn btn-close">X</button></div>
-            <div class="admin-section">
-                <h3>Manage Stock</h3>
-                <form id="stockForm">
-                    <input type="number" id="itemId" placeholder="Item ID (leave blank for new)">
-                    <input type="text" id="itemName" placeholder="Item Name" required>
-                    <input type="number" id="itemPrice" placeholder="Price" step="0.01" required>
-                    <input type="number" id="itemStock" placeholder="Stock" required>
-                    <button type="submit" class="btn btn-primary">Update/Add Item</button>
-                    <button type="button" id="deleteItemBtn" class="btn btn-danger">Delete Item</button>
-                </form>
-            </div>
-            <div class="admin-section">
-                <h3>Admin Console</h3>
-                <div id="consoleMenu" class="console-menu" style="display: none;">
-                    <input type="text" id="consoleInput" placeholder="Enter command (type 'help' for commands)">
-                    <div id="consoleOutput" class="console-output"></div>
-                </div>
-            </div>
+        <div id="pickupForm" class="pickup-form">
+            <h2>Schedule Pickup</h2>
+            <input type="datetime-local" id="pickupTime" required>
+            <button id="schedulePickupBtn" class="btn btn-primary">Schedule Pickup</button>
         </div>
+        <div id="result" class="result"></div>
+        <button id="chatBtn" class="btn btn-chat">Chat to a Representative</button>
     </div>
     <script src="script.js"></script>
 </body>
