@@ -98,7 +98,7 @@ app.post('/login', async (req, res) => {
     res.json({ success: true, email: normalizedEmail });
 });
 
-// Other routes (updated to persist sessions/carts)
+// Other routes
 app.get('/stock', (req, res) => {
     if (isShutdown) {
         return res.status(503).json({ success: false, error: 'Site is temporarily down' });
