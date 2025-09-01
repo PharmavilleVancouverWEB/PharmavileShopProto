@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="loading"><img src="https://via.placeholder.com/240?text=Loading" alt="Loading"></div>
+    <div id="loading"><img src="https://via.placeholder.com/80?text=Loading" alt="Loading"></div>
     <div id="login-form">
         <h2>Login</h2>
         <input type="email" id="login-email" placeholder="Email" required>
@@ -15,20 +15,12 @@
         <button onclick="login()">Login</button>
     </div>
     <h1>Pharmaville Shop</h1>
-    <div id="cart"></div>
-    <div id="stock-list"></div>
-    <div id="admin-panel">
-        <h2>Admin Panel</h2>
-        <input type="number" id="item-id" placeholder="Item ID (optional)">
-        <input type="text" id="item-name" placeholder="Item Name">
-        <input type="number" id="item-price" placeholder="Price">
-        <input type="number" id="item-stock" placeholder="Stock">
-        <button onclick="updateStock()">Update Stock</button>
-        <input type="text" id="ban-email" placeholder="Ban Email">
-        <button onclick="banEmail()">Ban Email</button>
-        <button onclick="shutdownSite()">Shutdown Site (30s)</button>
+    <div id="cart">
+        <h2>Cart</h2>
+        <div id="cart-items"></div>
+        <button id="place-order">Place Order</button>
     </div>
-    <div id="console"></div>
+    <div id="stock-list"></div>
     <button id="chat-button" onclick="chatToRep()">Chat to a Representative</button>
     <script src="script.js"></script>
 </body>
