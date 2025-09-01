@@ -213,11 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (chatBtn) {
         chatBtn.addEventListener('click', () => {
-            if (adminMenu) {
-                adminMenu.style.display = 'block';
-            } else {
-                resultDiv.textContent = 'Error: Chat not available';
-            }
+            alert("Sorry, this is not a released feature!");
         });
     }
 
