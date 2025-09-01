@@ -3,58 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pharmaville Shop Prototype</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Pharmaville</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        #loading { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(255, 255, 255, 0.8); 
+            z-index: 1000; 
+        }
+        #loading img { 
+            width: 240px; 
+            height: 240px; 
+            border-radius: 20px; 
+        }
+        #login-form, #stock-list, #cart { margin-top: 20px; }
+        .item { border: 1px solid #ccc; padding: 10px; margin: 5px 0; }
+        #admin-panel { 
+            width: 500px; 
+            background: #f0f0f0; 
+            padding: 20px; 
+            position: fixed; 
+            top: 20px; 
+            right: -520px; 
+            transition: right 0.3s ease; 
+            z-index: 999; 
+        }
+        #admin-panel.active { right: 0; }
+        #console { 
+            display: none; 
+            background: #333; 
+            color: white; 
+            padding: 10px; 
+            position: fixed; 
+            bottom: 0; 
+            width: 100%; 
+        }
+        #chat-button { 
+            position: fixed; 
+            bottom: 20px; 
+            right: 20px; 
+            padding: 10px 20px; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+        }
+        #login-form input { margin: 5px; padding: 5px; }
+    </style>
 </head>
 <body>
-    <div id="login" class="login-container">
-        <form id="loginForm" class="login-form">
-            <h2>Welcome</h2>
-            <input type="text" id="name" placeholder="Your Name" required>
-            <input type="email" id="email" placeholder="Your Email" required>
-            <button type="submit" class="btn btn-primary" id="loginBtn">Enter Shop</button>
-        </form>
+    <div id="loading"><img src="https://via.placeholder.com/240?text=Loading" alt="Loading"></div>
+    <div id="login-form">
+        <h2>Login</h2>
+        <input type="email" id="login-email" placeholder="Email" required>
+        <input type="text" id="login-name" placeholder="Name" required>
+        <button onclick="login()">Login</button>
     </div>
-    <div id="shop" class="shop-container" style="display: none;">
-        <div class="shop-grid">
-            <div class="stock-section">
-                <h2>Items in Stock</h2>
-                <div id="items" class="items-list"></div>
-            </div>
-            <div class="cart-section">
-                <h2>Your Cart</h2>
-                <div id="cart" class="cart-list"></div>
-                <button id="orderBtn" class="btn btn-primary">Place Order</button>
-                <button id="chatBtn" class="btn btn-chat">Chat to a Representative</button>
-                <button id="logoutBtn" class="btn btn-secondary">Logout</button>
-                <div id="loading" class="loading-overlay" style="display: none;">
-                    <img src="https://cdn-icons-gif.flaticon.com/15968/15968675.gif" alt="Loading...">
-                </div>
-                <div id="result" class="result"></div>
-            </div>
-        </div>
-        <div id="adminMenu" class="admin-menu" style="display: none;">
-            <div class="admin-header">Admin Menu <button id="closeAdminBtn" class="btn btn-close">X</button></div>
-            <div class="admin-section">
-                <h3>Manage Stock</h3>
-                <form id="stockForm">
-                    <input type="number" id="itemId" placeholder="Item ID (leave blank for new)">
-                    <input type="text" id="itemName" placeholder="Item Name" required>
-                    <input type="number" id="itemPrice" placeholder="Price" step="0.01" required>
-                    <input type="number" id="itemStock" placeholder="Stock" required>
-                    <button type="submit" class="btn btn-primary">Update/Add Item</button>
-                    <button type="button" id="deleteItemBtn" class="btn btn-danger">Delete Item</button>
-                </form>
-            </div>
-        </div>
-        <div id="consoleMenu" class="console-menu" style="display: none;">
-            <div class="admin-header">Admin Console <button id="closeConsoleBtn" class="btn btn-close">X</button></div>
-            <div class="console-section">
-                <input type="text" id="consoleInput" placeholder="Enter command (e.g., p/alertall('message'))">
-                <div id="consoleOutput" class="console-output"></div>
-            </div>
-        </div>
+    <h1>Pharmaville Shop</h1>
+    <div id="cart"></div>
+    <div id="stock-list"></div>
+    <div id="admin-panel">
+        <h2>Admin Panel</h2>
+        <input type="number" id="item-id" placeholder="Item ID (optional)">
+        <input type="text" id="item-name" placeholder="Item Name">
+        <input type="number" id="item-price" placeholder="Price">
+        <input type="number" id="item-stock" placeholder="Stock">
+        <button onclick="updateStock()">Update Stock</button>
+        <input type="text" id="ban-email" placeholder="Ban Email">
+        <button onclick="banEmail()">Ban Email</button>
+        <button onclick="shutdownSite()">Shutdown Site (30s)</button>
     </div>
+    <div id="console"></div>
+    <button id="chat-button" onclick="chatToRep()">Chat to a Representative</button>
     <script src="script.js"></script>
 </body>
 </html>
