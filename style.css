@@ -6,22 +6,18 @@ body {
 }
 
 #loading {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.8);
-    z-index: 1000;
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 100;
 }
 
 #loading img {
-    width: 240px;
-    height: 240px;
-    border-radius: 20px;
+    width: 80px;
+    height: 80px;
+    border-radius: 10px;
 }
 
 #login-form {
@@ -72,6 +68,37 @@ h1 {
     margin: 20px auto;
 }
 
+#cart {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#cart-items {
+    margin-bottom: 10px;
+}
+
+#place-order {
+    width: 100%;
+    padding: 10px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+}
+
+#place-order:hover {
+    background: #218838;
+}
+
+#place-order:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
 .item {
     border: 1px solid #ccc;
     padding: 10px;
@@ -98,14 +125,14 @@ h1 {
 }
 
 #admin-panel {
-    width: 500px;
+    width: 400px;
     background: #f0f0f0;
     padding: 20px;
     position: fixed;
     top: 20px;
-    right: -520px;
+    right: -420px;
     transition: right 0.3s ease;
-    z-index: 999;
+    z-index: 99;
     box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -147,6 +174,7 @@ h1 {
     bottom: 0;
     width: 100%;
     box-sizing: border-box;
+    z-index: 98;
 }
 
 #chat-button {
@@ -160,6 +188,7 @@ h1 {
     border-radius: 4px;
     cursor: pointer;
     transition: background 0.3s;
+    z-index: 97;
 }
 
 #chat-button:hover {
@@ -169,8 +198,8 @@ h1 {
 /* Responsive design */
 @media (max-width: 600px) {
     #loading img {
-        width: 160px;
-        height: 160px;
+        width: 60px;
+        height: 60px;
     }
 
     #login-form, #cart, #stock-list {
