@@ -1,6 +1,6 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
 const schedule = require('node-schedule');
 const app = express();
@@ -12,45 +12,47 @@ app.use(express.static(__dirname));
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'noreply.pharmaville@gmail.com',
-        pass: 'ljxasarmaappzsie' // Replace with actual app-specific password
+        user: process.env.GMAIL_USER || 'noreply.pharmaville@gmail.com',
+        pass: process.env.GMAIL_PASS || 'ljxasarmaappzsie'
     }
 });
 
 let stock = [];
 let bannedEmails = [];
 const stockFile = path.join(__dirname, 'stock.json');
-let sessions = new Map(); // email -> { lastActive: timestamp }
-let carts = new Map(); // email -> cart array
+let sessions = new Map();
+let carts = new Map();
 let isShutdown = false;
 let shutdownEndTime = null;
 
-// Initialize stock.json if it doesn't exist
-try {
-    if (!fs.existsSync(stockFile)) {
-        console.log('stock.json not found, creating with initial data');
-        const initialData = {
-            items: [
-                { id: 1, name: 'Item1', price: 10, stock: 5 },
-                { id: 2, name: 'Item2', price: 20, stock: 3 }
-            ],
-            bannedEmails: []
-        };
-        fs.writeFileSync(stockFile, JSON.stringify(initialData, null, 2));
-        stock = initialData.items;
-        bannedEmails = initialData.bannedEmails;
-    } else {
-        const data = JSON.parse(fs.readFileSync(stockFile));
-        stock = data.items || [];
-        bannedEmails = data.bannedEmails || [];
+// Initialize stock.json
+async function initializeStock() {
+    try {
+        if (!(await fs.access(stockFile).catch(() => false))) {
+            console.log('stock.json not found, creating with initial data');
+            const initialData = {
+                items: [
+                    { id: 1, name: 'Item1', price: 10, stock: 5 },
+                    { id: 2, name: 'Item2', price: 20, stock: 3 }
+                ],
+                bannedEmails: []
+            };
+            await fs.writeFile(stockFile, JSON.stringify(initialData, null, 2));
+            stock = initialData.items;
+            bannedEmails = initialData.bannedEmails;
+        } else {
+            const data = JSON.parse(await fs.readFile(stockFile));
+            stock = data.items || [];
+            bannedEmails = data.bannedEmails || [];
+        }
+    } catch (err) {
+        console.error('Error initializing stock.json:', err);
+        stock = [];
+        bannedEmails = [];
     }
-} catch (err) {
-    console.error('Error initializing stock.json:', err);
-    // Fallback to empty data to prevent crash
-    stock = [];
-    bannedEmails = [];
 }
 
+// Routes
 app.get('/stock', (req, res) => {
     if (isShutdown) {
         return res.status(503).json({ success: false, error: 'Site is temporarily down' });
@@ -66,7 +68,7 @@ app.post('/check-ban', (req, res) => {
     res.json({ banned: bannedEmails.includes(email.toLowerCase()) });
 });
 
-app.post('/order', (req, res) => {
+app.post('/order', async (req, res) => {
     if (isShutdown) {
         return res.status(503).json({ success: false, error: 'Site is temporarily down' });
     }
@@ -90,15 +92,15 @@ app.post('/order', (req, res) => {
     });
 
     try {
-        fs.writeFileSync(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
-        carts.set(email, []); // Clear cart after order
+        await fs.writeFile(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
+        carts.set(email, []);
     } catch (err) {
         console.error('Error writing stock.json:', err);
         return res.status(500).json({ success: false, error: 'Failed to update stock' });
     }
 
     const mailOptions = {
-        from: 'noreply.pharmaville@gmail.com',
+        from: process.env.GMAIL_USER || 'noreply.pharmaville@gmail.com',
         to: email,
         subject: 'Pharmaville Order Confirmation',
         text: `Dear ${name},\n\nYour order has been received:\n${orderSummary}\nNot in stock: ${not_in_stock.join(', ') || 'None'}\n\nThank you!`
@@ -113,7 +115,7 @@ app.post('/order', (req, res) => {
     });
 });
 
-app.post('/update-stock', (req, res) => {
+app.post('/update-stock', async (req, res) => {
     if (isShutdown) {
         return res.status(503).json({ success: false, error: 'Site is temporarily down' });
     }
@@ -137,7 +139,7 @@ app.post('/update-stock', (req, res) => {
     }
 
     try {
-        fs.writeFileSync(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
+        await fs.writeFile(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
     } catch (err) {
         console.error('Error writing stock.json:', err);
         return res.status(500).json({ success: false, error: 'Failed to update stock' });
@@ -145,7 +147,7 @@ app.post('/update-stock', (req, res) => {
     res.json({ success: true });
 });
 
-app.delete('/update-stock', (req, res) => {
+app.delete('/update-stock', async (req, res) => {
     if (isShutdown) {
         return res.status(503).json({ success: false, error: 'Site is temporarily down' });
     }
@@ -161,7 +163,7 @@ app.delete('/update-stock', (req, res) => {
 
     stock.splice(index, 1);
     try {
-        fs.writeFileSync(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
+        await fs.writeFile(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
     } catch (err) {
         console.error('Error writing stock.json:', err);
         return res.status(500).json({ success: false, error: 'Failed to update stock' });
@@ -179,7 +181,6 @@ app.post('/alert-all', (req, res) => {
     if (!message) {
         return res.status(400).json({ success: false, error: 'Message required' });
     }
-    // Store message for polling
     res.json({ success: true, message });
 });
 
@@ -218,7 +219,7 @@ app.post('/shutdown-site', (req, res) => {
     res.json({ success: true });
 });
 
-app.post('/ban-email', (req, res) => {
+app.post('/ban-email', async (req, res) => {
     const { email } = req.body;
     if (!email) {
         return res.status(400).json({ success: false, error: 'Email required' });
@@ -229,7 +230,7 @@ app.post('/ban-email', (req, res) => {
         sessions.delete(normalizedEmail);
         carts.delete(normalizedEmail);
         try {
-            fs.writeFileSync(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
+            await fs.writeFile(stockFile, JSON.stringify({ items: stock, bannedEmails }, null, 2));
         } catch (err) {
             console.error('Error writing stock.json:', err);
             return res.status(500).json({ success: false, error: 'Failed to update banned emails' });
@@ -238,12 +239,28 @@ app.post('/ban-email', (req, res) => {
     res.json({ success: true });
 });
 
-// Global error handler to prevent crashes
+// Global error handler
 app.use((err, req, res, next) => {
     console.error('Unhandled error:', err);
     res.status(500).json({ success: false, error: 'Internal server error' });
 });
 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+// Process error handlers
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
 });
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Start server
+initializeStock()
+    .then(() => {
+        app.listen(port, () => {
+            console.log(`Server running on port ${port}`);
+        });
+    })
+    .catch((err) => {
+        console.error('Failed to initialize server:', err);
+        process.exit(1);
+    });
