@@ -1,10 +1,47 @@
 let stockCache = null;
+let user = null;
 const isAdmin = true; // Replace with actual auth check
 const adminPanel = document.getElementById('admin-panel');
 const consoleDiv = document.getElementById('console');
 const loading = document.getElementById('loading');
+const loginForm = document.getElementById('login-form');
+const stockList = document.getElementById('stock-list');
+const cartDiv = document.getElementById('cart');
+
+async function login() {
+    const email = document.getElementById('login-email').value;
+    const name = document.getElementById('login-name').value;
+    if (!email || !name) return alert('Email and name required');
+    try {
+        loading.style.display = 'flex';
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const result = await response.json();
+        if (result.success) {
+            user = { email, name };
+            localStorage.setItem('user', JSON.stringify(user));
+            loginForm.style.display = 'none';
+            stockList.style.display = 'block';
+            cartDiv.style.display = 'block';
+            fetchStock();
+            updateCartDisplay();
+        } else {
+            alert(`Login failed: ${result.error}`);
+        }
+    } catch (err) {
+        console.error('Login error:', err);
+        alert('Failed to login. Retrying...');
+        setTimeout(login, 5000);
+    } finally {
+        loading.style.display = 'none';
+    }
+}
 
 async function fetchStock() {
+    if (!user) return;
     try {
         loading.style.display = 'flex';
         const response = await fetch('/stock');
@@ -14,15 +51,14 @@ async function fetchStock() {
         displayStock(data);
     } catch (err) {
         console.error('Fetch error:', err);
-        document.getElementById('stock-list').innerHTML = '<p>Error loading stock. Retrying...</p>';
-        setTimeout(fetchStock, 5000); // Retry after 5s
+        stockList.innerHTML = '<p>Error loading stock. Retrying...</p>';
+        setTimeout(fetchStock, 5000);
     } finally {
         loading.style.display = 'none';
     }
 }
 
 function displayStock(stock) {
-    const stockList = document.getElementById('stock-list');
     stockList.innerHTML = stock.map(item => `
         <div class="item">
             ${item.name} - $${item.price} (Stock: ${item.stock})
@@ -32,27 +68,48 @@ function displayStock(stock) {
 }
 
 async function addToCart(itemId) {
-    const email = prompt('Enter your email:');
-    const name = prompt('Enter your name:');
-    if (!email || !name) return alert('Email and name required');
+    if (!user) return alert('Please login first');
     try {
         const response = await fetch('/check-ban', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
+            body: JSON.stringify({ email: user.email })
         });
         const { banned } = await response.json();
-        if (banned) return alert('Your email is banned');
-        
+        if (banned) {
+            user = null;
+            localStorage.removeItem('user');
+            loginForm.style.display = 'block';
+            stockList.style.display = 'none';
+            cartDiv.style.display = 'none';
+            return alert('Your email is banned');
+        }
+
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const item = stockCache.find(s => s.id === itemId);
+        if (!item) return alert('Item not found');
+        const cartItem = cart.find(c => c.id === itemId);
+        if (cartItem) {
+            if (cartItem.quantity + 1 > item.stock) return alert('Not enough stock');
+            cartItem.quantity += 1;
+        } else {
+            if (item.stock < 1) return alert('Not enough stock');
+            cart.push({ id: itemId, quantity: 1 });
+        }
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartDisplay();
+
         const response2 = await fetch('/order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, name, items: [{ id: itemId, quantity: 1 }] })
+            body: JSON.stringify({ email: user.email, name: user.name, items: cart })
         });
         const result = await response2.json();
         if (result.success) {
             alert('Order placed! Check your email.');
-            fetchStock(); // Refresh stock
+            localStorage.setItem('cart', '[]');
+            fetchStock();
+            updateCartDisplay();
         } else {
             alert(`Order failed: ${result.error}`);
         }
@@ -60,6 +117,14 @@ async function addToCart(itemId) {
         console.error('Order error:', err);
         alert('Failed to place order');
     }
+}
+
+function updateCartDisplay() {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    cartDiv.innerHTML = `<h2>Cart</h2>` + (cart.length ? cart.map(item => {
+        const stockItem = stockCache ? stockCache.find(s => s.id === item.id) : null;
+        return `<div>${stockItem ? stockItem.name : 'Item'} x${item.quantity}</div>`;
+    }).join('') : '<p>Cart is empty</p>');
 }
 
 async function updateStock() {
@@ -143,4 +208,16 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-fetchStock();
+// Initialize
+if (localStorage.getItem('user')) {
+    user = JSON.parse(localStorage.getItem('user'));
+    loginForm.style.display = 'none';
+    stockList.style.display = 'block';
+    cartDiv.style.display = 'block';
+    fetchStock();
+    updateCartDisplay();
+} else {
+    loginForm.style.display = 'block';
+    stockList.style.display = 'none';
+    cartDiv.style.display = 'none';
+}
