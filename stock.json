@@ -1,7 +1,4 @@
-{
-    "items": [
-        { "id": 1, "name": "Item1", "price": 10, "stock": 5 },
-        { "id": 2, "name": "Item2", "price": 20, "stock": 3 }
-    ],
-    "bannedEmails": []
-}
+[
+    { "id": 1, "name": "Band-Aid", "price": 4.99, "stock": 20 },
+    { "id": 2, "name": "Heating Pad", "price": 35, "stock": 3 }
+]
