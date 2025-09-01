@@ -37,36 +37,6 @@
             <input type="datetime-local" id="pickupTime" required>
             <button id="schedulePickupBtn" class="btn btn-primary">Schedule Pickup</button>
         </div>
-        <div id="chatForm" class="chat-form">
-            <h2>Chat with Representative</h2>
-            <div id="chatMessages" class="chat-messages"></div>
-            <input type="text" id="chatInput" placeholder="Type your message...">
-            <button id="sendChatBtn" class="btn btn-primary">Send</button>
-        </div>
-        <div id="adminPanel" class="admin-panel">
-            <div class="admin-header">Admin Panel <button id="closeAdminBtn" class="btn btn-close">X</button></div>
-            <div class="admin-tabs">
-                <button class="tab-btn active" onclick="showTab('stockTab')">Manage Stock</button>
-                <button class="tab-btn" onclick="showTab('chatTab')">Chat Requests</button>
-            </div>
-            <div id="stockTab" class="admin-tab">
-                <form id="stockForm">
-                    <input type="number" id="itemId" placeholder="Item ID (leave blank for new)">
-                    <input type="text" id="itemName" placeholder="Item Name" required>
-                    <input type="number" id="itemPrice" placeholder="Price" step="0.01" required>
-                    <input type="number" id="itemStock" placeholder="Stock" required>
-                    <button type="submit" class="btn btn-primary">Update/Add Item</button>
-                    <button type="button" id="deleteItemBtn" class="btn btn-danger">Delete Item</button>
-                </form>
-            </div>
-            <div id="chatTab" class="admin-tab" style="display: none;">
-                <h3>Chat Requests</h3>
-                <div id="chatQueue" class="chat-queue"></div>
-                <div id="adminChatMessages" class="chat-messages"></div>
-                <input type="text" id="adminChatInput" placeholder="Type your message...">
-                <button id="sendAdminChatBtn" class="btn btn-primary">Send</button>
-            </div>
-        </div>
         <div id="result" class="result"></div>
         <button id="chatBtn" class="btn btn-chat">Chat to a Representative</button>
     </div>
