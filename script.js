@@ -1,514 +1,146 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const apiUrl = ''; // Relative path, same domain
-    let cart = [];
-    let stockItems = []; // Store stock data for name lookup
-    let isDraggingAdmin = false;
-    let isDraggingConsole = false;
-    let currentX;
-    let currentY;
-    let xOffsetAdmin = 0;
-    let yOffsetAdmin = 0;
-    let xOffsetConsole = 0;
-    let yOffsetConsole = 0;
+let stockCache = null;
+const isAdmin = true; // Replace with actual auth check
+const adminPanel = document.getElementById('admin-panel');
+const consoleDiv = document.getElementById('console');
+const loading = document.getElementById('loading');
 
-    // DOM elements
-    const loginForm = document.getElementById('loginForm');
-    const loginDiv = document.getElementById('login');
-    const shopDiv = document.getElementById('shop');
-    const itemsDiv = document.getElementById('items');
-    const cartDiv = document.getElementById('cart');
-    const orderBtn = document.getElementById('orderBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const chatBtn = document.getElementById('chatBtn');
-    const loadingDiv = document.getElementById('loading');
-    const resultDiv = document.getElementById('result');
-    const adminMenu = document.getElementById('adminMenu');
-    const stockForm = document.getElementById('stockForm');
-    const deleteItemBtn = document.getElementById('deleteItemBtn');
-    const closeAdminBtn = document.getElementById('closeAdminBtn');
-    const consoleMenu = document.getElementById('consoleMenu');
-    const consoleInput = document.getElementById('consoleInput');
-    const consoleOutput = document.getElementById('consoleOutput');
-    const closeConsoleBtn = document.getElementById('closeConsoleBtn');
-    const loginBtn = document.getElementById('loginBtn');
-
-    // Validate critical DOM elements
-    if (!loginForm || !loginDiv || !shopDiv || !itemsDiv || !cartDiv || !orderBtn || !logoutBtn || !loadingDiv || !resultDiv || !loginBtn) {
-        console.error('Critical DOM elements missing:', { loginForm, loginDiv, shopDiv, itemsDiv, cartDiv, orderBtn, logoutBtn, loadingDiv, resultDiv, loginBtn });
-        resultDiv.textContent = 'Error: Page setup failed';
-        return;
+async function fetchStock() {
+    try {
+        loading.style.display = 'flex';
+        const response = await fetch('/stock');
+        if (!response.ok) throw new Error('Failed to fetch stock');
+        const data = await response.json();
+        stockCache = data;
+        displayStock(data);
+    } catch (err) {
+        console.error('Fetch error:', err);
+        document.getElementById('stock-list').innerHTML = '<p>Error loading stock. Retrying...</p>';
+        setTimeout(fetchStock, 5000); // Retry after 5s
+    } finally {
+        loading.style.display = 'none';
     }
+}
 
-    loginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        console.log('Login form submitted');
-        loginBtn.classList.add('expanding');
-        loginDiv.classList.add('blue-fade');
-        setTimeout(() => {
-            console.log('Animation complete, processing login');
-            const nameInput = document.getElementById('name');
-            const emailInput = document.getElementById('email');
-            if (!nameInput || !emailInput) {
-                console.error('Form inputs missing:', { nameInput, emailInput });
-                resultDiv.textContent = 'Error: Form inputs not found';
-                loginBtn.classList.remove('expanding');
-                loginDiv.classList.remove('blue-fade');
-                return;
-            }
-            const name = nameInput.value.trim();
-            const email = emailInput.value.trim().toLowerCase();
-            if (!name || !email) {
-                console.error('Invalid input:', { name, email });
-                resultDiv.textContent = 'Error: Name and email required';
-                loginBtn.classList.remove('expanding');
-                loginDiv.classList.remove('blue-fade');
-                return;
-            }
-            window.currentUser = { name, email };
-            console.log('User set:', window.currentUser);
-            loginDiv.style.display = 'none';
-            shopDiv.style.display = 'block';
-            shopDiv.classList.add('fade-in');
-            // Admin menu only opens via keybinds
-            fetch(`${apiUrl}/check-ban`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-            })
-                .then(res => res.json())
-                .then(result => {
-                    if (result.banned) {
-                        resultDiv.textContent = 'Error: This email is banned';
-                        loginDiv.style.display = 'block';
-                        shopDiv.style.display = 'none';
-                        window.currentUser = null;
-                    } else {
-                        loadStock();
-                    }
-                })
-                .catch(err => {
-                    console.error('Ban check error:', err);
-                    resultDiv.textContent = `Error checking ban status: ${err.message}`;
-                });
-        }, 1000); // Match animation duration
-    });
+function displayStock(stock) {
+    const stockList = document.getElementById('stock-list');
+    stockList.innerHTML = stock.map(item => `
+        <div class="item">
+            ${item.name} - $${item.price} (Stock: ${item.stock})
+            <button onclick="addToCart(${item.id})">Add to Cart</button>
+        </div>
+    `).join('');
+}
 
-    // Draggable admin menu
-    if (adminMenu) {
-        adminMenu.addEventListener('mousedown', (e) => {
-            if (e.target.classList.contains('admin-header')) {
-                isDraggingAdmin = true;
-                currentX = e.clientX - xOffsetAdmin;
-                currentY = e.clientY - yOffsetAdmin;
-            }
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (isDraggingAdmin) {
-                e.preventDefault();
-                xOffsetAdmin = e.clientX - currentX;
-                yOffsetAdmin = e.clientY - currentY;
-                adminMenu.style.left = `${xOffsetAdmin}px`;
-                adminMenu.style.top = `${yOffsetAdmin}px`;
-            }
-        });
-
-        document.addEventListener('mouseup', () => {
-            isDraggingAdmin = false;
-        });
-
-        if (closeAdminBtn) {
-            closeAdminBtn.addEventListener('click', () => {
-                adminMenu.style.display = 'none';
-            });
-        }
-    }
-
-    // Draggable console menu
-    if (consoleMenu) {
-        consoleMenu.addEventListener('mousedown', (e) => {
-            if (e.target.classList.contains('admin-header')) {
-                isDraggingConsole = true;
-                currentX = e.clientX - xOffsetConsole;
-                currentY = e.clientY - yOffsetConsole;
-            }
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (isDraggingConsole) {
-                e.preventDefault();
-                xOffsetConsole = e.clientX - currentX;
-                yOffsetConsole = e.clientY - currentY;
-                consoleMenu.style.left = `${xOffsetConsole}px`;
-                consoleMenu.style.top = `${yOffsetConsole}px`;
-            }
-        });
-
-        document.addEventListener('mouseup', () => {
-            isDraggingConsole = false;
-        });
-
-        if (closeConsoleBtn) {
-            closeConsoleBtn.addEventListener('click', () => {
-                consoleMenu.style.display = 'none';
-            });
-        }
-    }
-
-    // Console menu logic
-    if (consoleMenu && consoleInput && consoleOutput) {
-        consoleInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const command = consoleInput.value.trim();
-                consoleInput.value = '';
-                processConsoleCommand(command);
-            }
-        });
-    }
-
-    function processConsoleCommand(command) {
-        if (!window.currentUser || window.currentUser.name !== 'Administrator' || window.currentUser.email !== 'noreply.pharmaville@gmail.com') {
-            return; // Only admin can use console
-        }
-        const output = document.createElement('div');
-        output.classList.add('console-line');
-
-        if (command === 'p/endsessionall') {
-            fetch(`${apiUrl}/end-sessions`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            })
-                .then(res => res.json())
-                .then(result => {
-                    output.textContent = result.success ? 'All sessions ended' : `Error: ${result.error}`;
-                    consoleOutput.appendChild(output);
-                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                })
-                .catch(err => {
-                    output.textContent = `Error: ${err.message}`;
-                    consoleOutput.appendChild(output);
-                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                });
-        } else if (command.startsWith('p/alertall(') && command.endsWith(')')) {
-            const message = command.slice(11, -1).replace(/['"]/g, '');
-            if (!message) {
-                output.textContent = 'Error: Message required for p/alertall';
-                consoleOutput.appendChild(output);
-                consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                return;
-            }
-            fetch(`${apiUrl}/alert-all`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message })
-            })
-                .then(res => res.json())
-                .then(result => {
-                    output.textContent = result.success ? `Alert sent: ${message}` : `Error: ${result.error}`;
-                    consoleOutput.appendChild(output);
-                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                })
-                .catch(err => {
-                    output.textContent = `Error: ${err.message}`;
-                    consoleOutput.appendChild(output);
-                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                });
-        } else if (command === 'p/clearcartall') {
-            fetch(`${apiUrl}/clear-carts`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            })
-                .then(res => res.json())
-                .then(result => {
-                    output.textContent = result.success ? 'All carts cleared' : `Error: ${result.error}`;
-                    consoleOutput.appendChild(output);
-                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                })
-                .catch(err => {
-                    output.textContent = `Error: ${err.message}`;
-                    consoleOutput.appendChild(output);
-                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                });
-        } else if (command === 'p/endsession20m') {
-            fetch(`${apiUrl}/end-sessions-20m`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            })
-                .then(res => res.json())
-                .then(result => {
-                    output.textContent = result.success ? `Sessions inactive for 20m ended: ${result.ended}` : `Error: ${result.error}`;
-                    consoleOutput.appendChild(output);
-                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                })
-                .catch(err => {
-                    output.textContent = `Error: ${err.message}`;
-                    consoleOutput.appendChild(output);
-                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                });
-        } else if (command.startsWith('p/shutdownsite(') && command.endsWith(')')) {
-            const secondsMatch = command.match(/^p\/shutdownsite\((\d+)\)$/);
-            if (!secondsMatch) {
-                output.textContent = 'Error: Invalid seconds for p/shutdownsite';
-                consoleOutput.appendChild(output);
-                consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                return;
-            }
-            const seconds = parseInt(secondsMatch[1]);
-            if (isNaN(seconds) || seconds <= 0) {
-                output.textContent = 'Error: Seconds must be a positive number';
-                consoleOutput.appendChild(output);
-                consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                return;
-            }
-            fetch(`${apiUrl}/shutdown-site`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ seconds })
-            })
-                .then(res => res.json())
-                .then(result => {
-                    output.textContent = result.success ? `Site shutting down for ${seconds} seconds` : `Error: ${result.error}`;
-                    consoleOutput.appendChild(output);
-                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                })
-                .catch(err => {
-                    output.textContent = `Error: ${err.message}`;
-                    consoleOutput.appendChild(output);
-                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                });
-        } else if (command.startsWith('p/banemail(') && command.endsWith(')')) {
-            const emailMatch = command.match(/^p\/banemail\(['"]([^'"]+)['"]\)$/);
-            if (!emailMatch) {
-                output.textContent = 'Error: Invalid email for p/banemail';
-                consoleOutput.appendChild(output);
-                consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                return;
-            }
-            const email = emailMatch[1].toLowerCase();
-            fetch(`${apiUrl}/ban-email`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-            })
-                .then(res => res.json())
-                .then(result => {
-                    output.textContent = result.success ? `Email banned: ${email}` : `Error: ${result.error}`;
-                    consoleOutput.appendChild(output);
-                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                })
-                .catch(err => {
-                    output.textContent = `Error: ${err.message}`;
-                    consoleOutput.appendChild(output);
-                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                });
-        } else {
-            output.textContent = `Unknown command: ${command}. Commands: p/endsessionall, p/alertall("message"), p/clearcartall, p/endsession20m, p/shutdownsite(seconds), p/banemail("email")`;
-            consoleOutput.appendChild(output);
-            consoleOutput.scrollTop = consoleOutput.scrollHeight;
-        }
-    }
-
-    // Keybinds for admin
-    document.addEventListener('keydown', (e) => {
-        if (window.currentUser && window.currentUser.name === 'Administrator' && window.currentUser.email === 'noreply.pharmaville@gmail.com') {
-            if (e.key.toLowerCase() === 'a' && adminMenu) {
-                adminMenu.style.display = adminMenu.style.display === 'block' ? 'none' : 'block';
-                console.log(`Admin panel toggled: ${adminMenu.style.display}`);
-            }
-            if (e.key.toLowerCase() === 'c' && consoleMenu) {
-                consoleMenu.style.display = consoleMenu.style.display === 'block' ? 'none' : 'block';
-                console.log(`Console menu toggled: ${consoleMenu.style.display}`);
-            }
-        }
-    });
-
-    function loadStock() {
-        if (stockItems.length > 0) {
-            console.log('Rendering cached stock:', stockItems);
-            renderStock(stockItems);
-        }
-
-        fetch(`${apiUrl}/stock`)
-            .then(res => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch stock`);
-                return res.json();
-            })
-            .then(items => {
-                console.log('Fetched stock:', items);
-                stockItems = items;
-                renderStock(items);
-            })
-            .catch(err => {
-                console.error('Stock load error:', err);
-                resultDiv.textContent = `Error loading stock: ${err.message}`;
-            });
-    }
-
-    function renderStock(items) {
-        itemsDiv.innerHTML = '';
-        items.forEach(item => {
-            const div = document.createElement('div');
-            div.innerHTML = `${item.name} - $${item.price} (Stock: ${item.stock}) <button class="btn btn-add-to-cart" onclick="addToCart(${item.id})">Add to Cart</button>`;
-            itemsDiv.appendChild(div);
-        });
-    }
-
-    setInterval(loadStock, 10000);
-
-    window.addToCart = function(id) {
-        const item = stockItems.find(i => i.id === id);
-        if (!item) {
-            resultDiv.textContent = 'Error: Item not found';
-            return;
-        }
-        const existing = cart.find(c => c.id === id);
-        if (existing) {
-            existing.quantity++;
-        } else {
-            cart.push({ id, name: item.name, quantity: 1 });
-        }
-        updateCart();
-    };
-
-    function updateCart() {
-        cartDiv.innerHTML = '';
-        cart.forEach(c => {
-            const div = document.createElement('div');
-            div.textContent = `${c.name} x ${c.quantity}`;
-            div.classList.add('animated');
-            cartDiv.appendChild(div);
-        });
-    }
-
-    orderBtn.addEventListener('click', () => {
-        if (cart.length === 0) {
-            resultDiv.textContent = 'Cart is empty!';
-            return;
-        }
-        if (!window.currentUser) {
-            resultDiv.textContent = 'Error: Please log in again';
-            return;
-        }
-        loadingDiv.style.display = 'flex';
-        resultDiv.textContent = '';
-        const user = window.currentUser;
-        fetch(`${apiUrl}/order`, {
+async function addToCart(itemId) {
+    const email = prompt('Enter your email:');
+    const name = prompt('Enter your name:');
+    if (!email || !name) return alert('Email and name required');
+    try {
+        const response = await fetch('/check-ban', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: user.email, name: user.name, items: cart })
-        })
-            .then(res => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}: Order request failed`);
-                return res.json();
-            })
-            .then(result => {
-                loadingDiv.style.display = 'none';
-                if (result.success) {
-                    resultDiv.textContent = `Order placed! Not in stock: ${result.not_in_stock.join(', ') || 'None'}`;
-                    cart = [];
-                    updateCart();
-                    loadStock();
-                } else {
-                    resultDiv.textContent = `Error placing order: ${result.error || 'Unknown error'}`;
-                }
-            })
-            .catch(err => {
-                loadingDiv.style.display = 'none';
-                resultDiv.textContent = `Error placing order: ${err.message}`;
-            });
-    });
-
-    logoutBtn.addEventListener('click', () => {
-        location.reload(); // Refresh page for logout
-    });
-
-    if (chatBtn) {
-        chatBtn.addEventListener('click', () => {
-            resultDiv.textContent = 'No representatives available at this time';
+            body: JSON.stringify({ email })
         });
+        const { banned } = await response.json();
+        if (banned) return alert('Your email is banned');
+        
+        const response2 = await fetch('/order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, name, items: [{ id: itemId, quantity: 1 }] })
+        });
+        const result = await response2.json();
+        if (result.success) {
+            alert('Order placed! Check your email.');
+            fetchStock(); // Refresh stock
+        } else {
+            alert(`Order failed: ${result.error}`);
+        }
+    } catch (err) {
+        console.error('Order error:', err);
+        alert('Failed to place order');
     }
+}
 
-    if (stockForm && deleteItemBtn) {
-        stockForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const idInput = document.getElementById('itemId');
-            const nameInput = document.getElementById('itemName');
-            const priceInput = document.getElementById('itemPrice');
-            const stockInput = document.getElementById('itemStock');
-            if (!nameInput || !priceInput || !stockInput) {
-                resultDiv.textContent = 'Error: Form inputs missing';
-                return;
-            }
-            const id = idInput.value.trim();
-            const name = nameInput.value.trim();
-            const price = parseFloat(priceInput.value);
-            const stock = parseInt(stockInput.value);
-            if (!name || isNaN(price) || price < 0 || isNaN(stock) || stock < 0) {
-                resultDiv.textContent = 'Please enter valid name, price (≥0), and stock (≥0)';
-                return;
-            }
-            const item = { id: id ? parseInt(id) : null, name, price, stock };
-            console.log('Submitting stock update:', item);
-
-            fetch(`${apiUrl}/update-stock`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(item)
-            })
-                .then(res => {
-                    if (!res.ok) throw new Error(`HTTP ${res.status}: Stock update failed`);
-                    return res.json();
-                })
-                .then(result => {
-                    if (result.success) {
-                        loadStock();
-                        stockForm.reset();
-                        resultDiv.textContent = 'Stock updated successfully!';
-                    } else {
-                        resultDiv.textContent = `Error updating stock: ${result.error || 'Unknown error'}`;
-                    }
-                })
-                .catch(err => {
-                    console.error('Stock update error:', err);
-                    resultDiv.textContent = `Error updating stock: ${err.message}`;
-                });
+async function updateStock() {
+    if (!isAdmin) return alert('Admin access required');
+    const id = parseInt(document.getElementById('item-id').value) || undefined;
+    const name = document.getElementById('item-name').value;
+    const price = parseFloat(document.getElementById('item-price').value);
+    const stock = parseInt(document.getElementById('item-stock').value);
+    try {
+        const response = await fetch('/update-stock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, name, price, stock })
         });
+        const result = await response.json();
+        if (result.success) {
+            alert('Stock updated');
+            fetchStock();
+        } else {
+            alert(`Failed to update stock: ${result.error}`);
+        }
+    } catch (err) {
+        console.error('Update stock error:', err);
+        alert('Failed to update stock');
+    }
+}
 
-        deleteItemBtn.addEventListener('click', () => {
-            const idInput = document.getElementById('itemId');
-            if (!idInput) {
-                resultDiv.textContent = 'Error: Item ID input missing';
-                return;
-            }
-            const id = idInput.value.trim();
-            if (!id || isNaN(id) || parseInt(id) <= 0) {
-                resultDiv.textContent = 'Please enter a valid Item ID';
-                return;
-            }
-            console.log('Deleting stock item:', { id });
-
-            fetch(`${apiUrl}/update-stock`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: parseInt(id) })
-            })
-                .then(res => {
-                    if (!res.ok) throw new Error(`HTTP ${res.status}: Stock deletion failed`);
-                    return res.json();
-                })
-                .then(result => {
-                    if (result.success) {
-                        loadStock();
-                        stockForm.reset();
-                        resultDiv.textContent = 'Item deleted successfully!';
-                    } else {
-                        resultDiv.textContent = `Error deleting stock: ${result.error || 'Unknown error'}`;
-                    }
-                })
-                .catch(err => {
-                    console.error('Stock deletion error:', err);
-                    resultDiv.textContent = `Error deleting stock: ${err.message}`;
-                });
+async function banEmail() {
+    if (!isAdmin) return alert('Admin access required');
+    const email = document.getElementById('ban-email').value;
+    try {
+        const response = await fetch('/ban-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
         });
+        const result = await response.json();
+        if (result.success) {
+            alert('Email banned');
+        } else {
+            alert(`Failed to ban email: ${result.error}`);
+        }
+    } catch (err) {
+        console.error('Ban email error:', err);
+        alert('Failed to ban email');
+    }
+}
+
+async function shutdownSite() {
+    if (!isAdmin) return alert('Admin access required');
+    try {
+        const response = await fetch('/shutdown-site', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ seconds: 30 })
+        });
+        const result = await response.json();
+        if (result.success) {
+            alert('Site shutting down for 30 seconds');
+        } else {
+            alert(`Shutdown failed: ${result.error}`);
+        }
+    } catch (err) {
+        console.error('Shutdown error:', err);
+        alert('Failed to shutdown site');
+    }
+}
+
+function chatToRep() {
+    alert('Chat feature coming soon! Contact us at support@pharmaville.com');
+}
+
+document.addEventListener('keydown', (e) => {
+    if (!isAdmin) return;
+    if (e.key === 'A') {
+        adminPanel.classList.toggle('active');
+    }
+    if (e.key === 'C') {
+        consoleDiv.style.display = consoleDiv.style.display === 'none' ? 'block' : 'none';
+        consoleDiv.innerHTML = 'Console: Ready for admin commands';
     }
 });
+
+fetchStock();
